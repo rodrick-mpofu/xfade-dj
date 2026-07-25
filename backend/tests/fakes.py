@@ -29,6 +29,10 @@ class FakeQuery:
         self._calls.append(("insert", (self._table, payload)))
         return self
 
+    def update(self, payload: dict[str, Any]) -> "FakeQuery":
+        self._calls.append(("update", (self._table, payload)))
+        return self
+
     def delete(self) -> "FakeQuery":
         self._calls.append(("delete", (self._table,)))
         return self
@@ -52,9 +56,19 @@ class FakeQuery:
 
 
 class FakeBucket:
-    def __init__(self, calls: list[tuple[str, Any]], fail_upload: bool = False):
+    def __init__(
+        self,
+        calls: list[tuple[str, Any]],
+        fail_upload: bool = False,
+        download_payload: bytes = b"fake audio",
+    ):
         self._calls = calls
         self._fail_upload = fail_upload
+        self._download_payload = download_payload
+
+    def download(self, path: str) -> bytes:
+        self._calls.append(("download", (path,)))
+        return self._download_payload
 
     def upload(self, path: str, file: bytes, file_options: dict[str, str] | None = None) -> Any:
         if self._fail_upload:
@@ -68,13 +82,19 @@ class FakeBucket:
 
 
 class FakeStorage:
-    def __init__(self, calls: list[tuple[str, Any]], fail_upload: bool = False):
+    def __init__(
+        self,
+        calls: list[tuple[str, Any]],
+        fail_upload: bool = False,
+        download_payload: bytes = b"fake audio",
+    ):
         self._calls = calls
         self._fail_upload = fail_upload
+        self._download_payload = download_payload
 
     def from_(self, bucket: str) -> FakeBucket:
         self._calls.append(("from_", (bucket,)))
-        return FakeBucket(self._calls, self._fail_upload)
+        return FakeBucket(self._calls, self._fail_upload, self._download_payload)
 
 
 class FakeSupabase:
@@ -85,11 +105,14 @@ class FakeSupabase:
         rows: dict[str, list[dict[str, Any]]] | None = None,
         fail_upload: bool = False,
         fail_insert: bool = False,
+        download_payload: bytes = b"fake audio",
     ):
         self.rows = rows or {}
         self.calls: list[tuple[str, Any]] = []
         self.fail_insert = fail_insert
-        self.storage = FakeStorage(self.calls, fail_upload=fail_upload)
+        self.storage = FakeStorage(
+            self.calls, fail_upload=fail_upload, download_payload=download_payload
+        )
 
     def table(self, name: str) -> FakeQuery:
         if self.fail_insert and name == "tracks":

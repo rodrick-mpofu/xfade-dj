@@ -1,9 +1,27 @@
 import uuid
 
+import pytest
+
 from tests.conftest import TEST_USER_ID
 from tests.fakes import FakeSupabase
 
 TRACK_ID = "22222222-2222-4222-8222-222222222222"
+
+
+@pytest.fixture(autouse=True)
+def queued_extractions(monkeypatch):
+    """Stop the background task from running a real extraction.
+
+    TestClient executes background tasks synchronously on response, so without
+    this an upload test reaches for the service-role client and attempts live
+    HTTP. The job swallows the failure, so it passes — slowly and misleadingly.
+    """
+    queued: list = []
+    monkeypatch.setattr(
+        "app.api.routes.tracks.schedule_extraction",
+        lambda background_tasks, track_id: queued.append(track_id),
+    )
+    return queued
 
 
 def _track_row(**overrides):
@@ -42,7 +60,7 @@ def test_upload_requires_a_token(client):
 # --- upload ----------------------------------------------------------------
 
 
-def test_upload_stores_object_and_creates_pending_features(authed_client):
+def test_upload_stores_object_and_creates_pending_features(authed_client, queued_extractions):
     fake = FakeSupabase(rows={"tracks": [_track_row()], "audio_features": [_features_row()]})
 
     response = authed_client(fake).post(
@@ -70,6 +88,9 @@ def test_upload_stores_object_and_creates_pending_features(authed_client):
     assert inserted["audio_features"]["status"] == "pending"
     assert inserted["tracks"]["file_ref"] == path
     assert inserted["tracks"]["user_id"] == TEST_USER_ID
+
+    # Extraction must be queued for exactly the track that was just created.
+    assert queued_extractions == [uuid.UUID(stem)]
 
 
 def test_upload_rejects_unsupported_extension(authed_client):
@@ -111,7 +132,7 @@ def test_upload_requires_a_title(authed_client):
     assert response.status_code == 422
 
 
-def test_failed_insert_removes_the_orphaned_object(authed_client):
+def test_failed_insert_removes_the_orphaned_object(authed_client, queued_extractions):
     fake = FakeSupabase(fail_insert=True)
 
     response = authed_client(fake).post(
@@ -123,6 +144,8 @@ def test_failed_insert_removes_the_orphaned_object(authed_client):
     assert response.status_code == 500
     uploaded = fake.calls_named("upload")[0][0]
     assert fake.calls_named("remove") == [(uploaded,)]
+    # No row survived, so nothing should be queued for analysis.
+    assert queued_extractions == []
 
 
 def test_storage_failure_is_reported_as_502(authed_client):

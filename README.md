@@ -18,13 +18,13 @@ docs/         design doc + build spec
 
 ## Status
 
-Build spec §7 steps 1–3 are done: schema, FastAPI skeleton, and track CRUD with
-Storage upload (`POST /tracks`, `GET /tracks`, `GET /tracks/{id}`). Extraction is
-stubbed — uploads land in state `pending` and stay there until step 4. The `combos`
-and `sessions` routers are registered but still have no handlers.
+Build spec §7 steps 1–4 are done: schema, FastAPI skeleton, track CRUD with Storage
+upload, and the Essentia extraction job. The `combos` and `sessions` routers are
+registered but still have no handlers; compatibility scoring (step 5) is next.
 
 Nothing has been exercised against a real Supabase project yet; the test suite runs
-against a fake client.
+against a fake client. The DSP itself has been verified in-container against
+synthesized audio (see "Extraction" below).
 
 ## Setup
 
@@ -65,6 +65,38 @@ fail until the migrations are applied. Interactive docs at `/docs`.
 ```bash
 pytest
 ```
+
+The host venv deliberately has **no Essentia** — it publishes no Windows wheels, only
+an sdist needing a full C++ toolchain. It is imported lazily, so everything except
+the extraction DSP runs natively, and the whole test suite passes on Windows.
+
+### 3. Running with Docker (required for extraction)
+
+```bash
+docker compose up --build
+```
+
+Needs `backend/.env` to exist. The image carries Essentia plus ffmpeg and libsndfile
+for mp3/m4a/aac/flac decoding, and matches what gets deployed (build spec §1).
+
+If you point `SUPABASE_URL` at a *local* `supabase start` stack, use
+`http://host.docker.internal:54321` — `localhost` inside the container is the
+container itself.
+
+## Extraction
+
+`POST /tracks` queues a background job that downloads the object, runs Essentia's
+`RhythmExtractor2013` (BPM) and `KeyExtractor` (key + scale → Camelot), and writes
+`audio_features`. The row moves `pending` → `processing` → `complete` | `failed`;
+track detail reports that state so the UI can show progress instead of blocking.
+
+Verified against synthesized audio in-container: a planted 120.0 BPM click track in
+A minor came back as **119.97 BPM / 8A**.
+
+`energy` is RMS — a stand-in for loudness, not intensity. `danceability` is
+recorded but **not calibrated** (it saturates at 1.0; see the comment in
+`audio_analysis.py`). Neither feeds the v1 compatibility score, which uses Camelot
+and BPM only.
 
 ## Design notes worth knowing
 

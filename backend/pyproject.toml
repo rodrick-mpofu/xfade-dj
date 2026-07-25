@@ -18,6 +18,18 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.7",
 ]
+# Linux only — Essentia ships no Windows wheels. Installed in the Docker image,
+# not in a host venv. numpy is pinned below 2.0 because Essentia's wheels are
+# built against the 1.x ABI.
+#
+# Every published Essentia build is a pre-release, so the version is pinned
+# exactly: naming it explicitly lets pip resolve it WITHOUT a global --pre, which
+# would otherwise drag in alpha builds of fastapi, pydantic, and supabase and
+# leave the container running a different stack than the host.
+audio = [
+    "essentia==2.1b6.dev1389",
+    "numpy<2",
+]
 
 [build-system]
 requires = ["hatchling"]
