@@ -18,9 +18,13 @@ docs/         design doc + build spec
 
 ## Status
 
-Build spec §7 steps 1–2 are done: schema and a FastAPI skeleton with health checks.
-Track CRUD (step 3) onward is not built. The `tracks` / `combos` / `sessions` routers
-exist and are registered but have no handlers.
+Build spec §7 steps 1–3 are done: schema, FastAPI skeleton, and track CRUD with
+Storage upload (`POST /tracks`, `GET /tracks`, `GET /tracks/{id}`). Extraction is
+stubbed — uploads land in state `pending` and stay there until step 4. The `combos`
+and `sessions` routers are registered but still have no handlers.
+
+Nothing has been exercised against a real Supabase project yet; the test suite runs
+against a fake client.
 
 ## Setup
 
