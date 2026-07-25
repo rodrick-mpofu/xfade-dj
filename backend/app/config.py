@@ -1,9 +1,11 @@
 """Application settings, loaded from environment / backend/.env."""
 
+import json
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -24,15 +26,32 @@ class Settings(BaseSettings):
 
     audio_bucket: str = "tracks"
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    # NoDecode is load-bearing: without it pydantic-settings tries to JSON-decode
+    # complex types straight from the environment and raises before any validator
+    # runs, so a plain comma-separated CORS_ORIGINS kills the app at startup.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:
-        """Accept a comma-separated string so .env stays readable."""
-        if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+        """Accept a comma-separated string so .env stays readable.
+
+        NoDecode turned off the built-in JSON handling, so a JSON list — the form
+        pydantic-settings documents — is parsed here too rather than silently
+        becoming one long origin.
+        """
+        if not isinstance(value, str):
+            return value
+
+        text = value.strip()
+        if text.startswith("["):
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                pass
+        return [origin.strip() for origin in text.split(",") if origin.strip()]
 
 
 @lru_cache
