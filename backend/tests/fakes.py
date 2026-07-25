@@ -45,6 +45,10 @@ class FakeQuery:
         self._calls.append(("in_", (self._table, column, values)))
         return self
 
+    def or_(self, expression: str) -> "FakeQuery":
+        self._calls.append(("or_", (self._table, expression)))
+        return self
+
     def order(self, column: str, **kwargs: Any) -> "FakeQuery":
         return self
 
@@ -109,11 +113,13 @@ class FakeSupabase:
         rows: dict[str, list[dict[str, Any]]] | None = None,
         fail_upload: bool = False,
         fail_insert: bool = False,
+        fail_rpc: bool = False,
         download_payload: bytes = b"fake audio",
     ):
         self.rows = rows or {}
         self.calls: list[tuple[str, Any]] = []
         self.fail_insert = fail_insert
+        self.fail_rpc = fail_rpc
         self.storage = FakeStorage(
             self.calls, fail_upload=fail_upload, download_payload=download_payload
         )
@@ -122,6 +128,12 @@ class FakeSupabase:
         if self.fail_insert and name == "tracks":
             raise RuntimeError("insert failed")
         return FakeQuery(name, self.calls, self.rows.get(name, []))
+
+    def rpc(self, function: str, params: dict[str, Any]) -> FakeQuery:
+        self.calls.append(("rpc", (function, params)))
+        if self.fail_rpc:
+            raise RuntimeError("rpc failed")
+        return FakeQuery(function, self.calls, self.rows.get(function, []))
 
     def calls_named(self, name: str) -> list[Any]:
         return [payload for call, payload in self.calls if call == name]

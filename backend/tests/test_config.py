@@ -6,6 +6,7 @@ default applied) while crashing on boot in Docker, where the .env file does set 
 """
 
 import pytest
+from pydantic import ValidationError
 
 from app.config import Settings
 
@@ -34,9 +35,7 @@ def test_comma_separated_origins_parse(env):
 
 
 def test_a_single_origin_parses(env):
-    assert env(CORS_ORIGINS="http://localhost:5173")().cors_origins == [
-        "http://localhost:5173"
-    ]
+    assert env(CORS_ORIGINS="http://localhost:5173")().cors_origins == ["http://localhost:5173"]
 
 
 def test_surrounding_whitespace_is_trimmed(env):
@@ -62,5 +61,5 @@ def test_default_applies_when_unset(env):
 def test_missing_required_settings_raise(monkeypatch):
     for key in REQUIRED:
         monkeypatch.delenv(key, raising=False)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         Settings(_env_file="")

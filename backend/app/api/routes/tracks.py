@@ -90,6 +90,14 @@ async def create_track(
     title: Annotated[str, Form(min_length=1, max_length=300)],
     artist: Annotated[str | None, Form(max_length=300)] = None,
 ) -> dict[str, Any]:
+    # Form fields, so this cannot ride on the pydantic schema. min_length=1 lets a
+    # whitespace-only title through, which then trips the database's
+    # length(trim(title)) > 0 check as a 500 instead of a validation error.
+    title = title.strip()
+    if not title:
+        # Literal 422: starlette renamed the constant, and the old name warns.
+        raise HTTPException(status_code=422, detail="Title must not be blank.")
+
     extension = normalise_extension(file.filename)
     if extension is None:
         accepted = ", ".join(sorted(EXTENSION_MIME_TYPES))
@@ -127,7 +135,7 @@ async def create_track(
                 {
                     "id": str(track_id),
                     "user_id": user.id,
-                    "title": title.strip(),
+                    "title": title,
                     "artist": artist.strip() if artist else None,
                     "file_ref": object_key,
                     "source": "upload",

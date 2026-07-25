@@ -18,14 +18,13 @@ docs/         design doc + build spec
 
 ## Status
 
-Build spec §7 steps 1–5 are done: schema, FastAPI skeleton, track CRUD with Storage
-upload, the Essentia extraction job, and rules-based compatibility scoring. The
-`combos` and `sessions` routers are registered but still have no handlers — CRUD
-for those (step 6) is next, then the React views.
+The v1 backend is complete — build spec §7 steps 1–6. Remaining work is the React
+frontend (steps 7–9).
 
-Nothing has been exercised against a real Supabase project yet; the test suite runs
-against a fake client. The DSP itself has been verified in-container against
-synthesized audio (see "Extraction" below).
+The whole pipeline has been exercised end to end against a live local stack: upload
+→ Storage → Essentia extraction → features → compatibility score, plus combo and
+session CRUD with two-user RLS isolation. Migrations are also applied to the hosted
+project, though the functional isolation checks were only run locally.
 
 ## Setup
 
@@ -123,6 +122,18 @@ they are easy to argue with.
 When either track has no features yet, the response carries a `status` instead of a
 score: `pending_extraction` (still running, worth polling), `extraction_failed`
 (terminal, offer a retry), or `missing_features`.
+
+## Setlists
+
+`PUT /sessions/{id}/tracks` replaces the whole ordered list — one primitive covering
+add, remove, and reorder, which is how drag-and-drop planners actually behave. It
+goes through the `set_session_tracks` Postgres function rather than a DELETE
+followed by an INSERT: over PostgREST those are two round trips with no transaction
+between them, and a failure in the middle would leave a hand-curated setlist empty.
+
+The function is `SECURITY INVOKER`, so RLS still applies — including the policy that
+re-checks every referenced track belongs to the caller. `POST /sessions/{id}/tracks`
+remains for appending a single track.
 
 ## Design notes worth knowing
 

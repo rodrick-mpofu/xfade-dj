@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.common import NonBlankTitle
+
 
 class ExtractionStatus(StrEnum):
     """Mirrors the `public.extraction_status` enum."""
@@ -18,7 +20,7 @@ class ExtractionStatus(StrEnum):
 
 
 class TrackCreate(BaseModel):
-    title: str = Field(min_length=1, max_length=300)
+    title: NonBlankTitle
     artist: str | None = Field(default=None, max_length=300)
     source: Literal["upload", "import"] = "upload"
 

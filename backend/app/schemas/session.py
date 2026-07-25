@@ -5,9 +5,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.common import NonBlankName
+
 
 class SessionCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=200)
+    name: NonBlankName
     planned_for: datetime | None = None
 
 
@@ -16,6 +18,22 @@ class SessionTrackRead(BaseModel):
     session_id: UUID
     track_id: UUID
     position: int = Field(ge=0)
+
+
+class SessionTrackAdd(BaseModel):
+    """Append one track to the end of a setlist."""
+
+    track_id: UUID
+
+
+class SessionTracksReplace(BaseModel):
+    """Replace the whole setlist, in order.
+
+    One primitive covering add, remove, and reorder — which is how a drag-and-drop
+    planner actually behaves. An empty list clears the setlist.
+    """
+
+    track_ids: list[UUID] = Field(default_factory=list)
 
 
 class SessionRead(BaseModel):

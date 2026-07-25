@@ -132,6 +132,35 @@ def test_upload_requires_a_title(authed_client):
     assert response.status_code == 422
 
 
+def test_a_whitespace_only_title_is_rejected(authed_client):
+    # min_length=1 accepts "   "; the database check constraint would then reject
+    # it as a 500 rather than a validation error.
+    fake = FakeSupabase()
+
+    response = authed_client(fake).post(
+        "/tracks",
+        files={"file": ("a.mp3", b"data", "audio/mpeg")},
+        data={"title": "   "},
+    )
+
+    assert response.status_code == 422
+    assert fake.calls_named("upload") == []
+
+
+def test_a_title_is_stored_trimmed(authed_client):
+    fake = FakeSupabase(rows={"tracks": [_track_row()], "audio_features": [_features_row()]})
+
+    authed_client(fake).post(
+        "/tracks",
+        files={"file": ("a.mp3", b"data", "audio/mpeg")},
+        data={"title": "  Windowlicker  ", "artist": "  Aphex Twin  "},
+    )
+
+    inserted = dict(fake.calls_named("insert"))
+    assert inserted["tracks"]["title"] == "Windowlicker"
+    assert inserted["tracks"]["artist"] == "Aphex Twin"
+
+
 def test_failed_insert_removes_the_orphaned_object(authed_client, queued_extractions):
     fake = FakeSupabase(fail_insert=True)
 
