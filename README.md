@@ -18,8 +18,9 @@ docs/         design doc + build spec
 
 ## Status
 
-The v1 backend is complete — build spec §7 steps 1–6. Remaining work is the React
-frontend (steps 7–9).
+Build spec §7 steps 1–6 (the whole backend) and step 7 (React shell, Library, track
+detail) are done. Remaining: the combo logger (step 8) and session planner (step 9),
+which are stubbed as placeholder routes in the nav.
 
 The whole pipeline has been exercised end to end against a live local stack: upload
 → Storage → Essentia extraction → features → compatibility score, plus combo and
@@ -87,6 +88,46 @@ for mp3/m4a/aac/flac decoding, and matches what gets deployed (build spec §1).
 If you point `SUPABASE_URL` at a *local* `supabase start` stack, use
 `http://host.docker.internal:54321` — `localhost` inside the container is the
 container itself.
+
+### 4. Frontend
+
+From `frontend/`:
+
+```bash
+npm install
+```
+
+Copy `frontend/.env.example` to `frontend/.env`. Only the **anon** key goes here —
+everything in that file ships to the browser.
+
+```bash
+npm run dev
+```
+
+Vite serves on `http://localhost:5173`, the origin the backend's CORS allowlist
+names. `npm test` runs the Vitest suite; `npm run types:api` regenerates TypeScript
+types from a running backend's OpenAPI schema.
+
+You need a Supabase Auth user to sign in. On the local stack, create one with the
+service-role key via `POST /auth/v1/admin/users`.
+
+## Frontend
+
+React + TypeScript, React Router, TanStack Query, Tailwind. Desktop-scale only —
+mobile breakpoints are explicitly deferred (build spec §3).
+
+Built so far: a login screen (not in the spec's view list, but every endpoint needs a
+JWT), the app shell, the Library table, and track detail.
+
+Two things worth knowing:
+
+**The Library polls, but only when it needs to.** Extraction is a background job with
+no push channel, so `useTracks` sets `refetchInterval` only while some track is
+`pending` or `processing`. An idle library makes no requests.
+
+**Sorting by key uses wheel order, not string order.** As strings, `10A` sorts between
+`1A` and `2A`, scattering neighbouring keys — which defeats the point of sorting by
+key at all.
 
 ## Extraction
 

@@ -1,18 +1,54 @@
-# xfade — frontend (placeholder)
+# xfade — frontend
 
-Not built yet. This directory exists so the monorepo shape is real; the React app
-lands at build-spec §7 steps 7–9, after the backend endpoints it depends on.
+React + TypeScript, Vite, React Router, TanStack Query, Tailwind. Desktop-scale
+only; mobile breakpoints are explicitly deferred (build spec §3).
 
-Planned per build spec §6 (desktop-scale, React, no mobile breakpoints in v1):
+Setup and environment variables are in the [root README](../README.md).
 
-| View | Depends on |
-|---|---|
-| Library — sortable table, BPM/key/energy columns | `GET /tracks` |
-| Track detail — extraction status, features, combos | `GET /tracks/{id}` |
-| Combo logger — live compatibility score as A/B are picked | `POST /combos`, `GET /compatibility` |
-| Session planner — reorderable setlist, per-adjacent-pair scores | `/sessions` CRUD, `GET /compatibility` |
+```bash
+npm install && npm run dev
+```
 
-Explicitly **not** in v1: responsive/mobile layout, recommendation UI, auto-detection UI.
+## Views
 
-The backend already allows `http://localhost:5173` through CORS, so a Vite scaffold
-will talk to it without further config.
+| View | Status | Depends on |
+|---|---|---|
+| Login | built | Supabase Auth |
+| Library — sortable table, BPM/key/energy | built | `GET /tracks` |
+| Track detail — extraction status, features, combos | built | `GET /tracks/{id}`, `GET /combos` |
+| Combo logger — live compatibility score | build spec §7 step 8 | `POST /combos`, `GET /compatibility` |
+| Session planner — reorderable setlist | build spec §7 step 9 | `/sessions` CRUD, `GET /compatibility` |
+
+The login screen is not in the spec's view list, but every backend endpoint requires
+a JWT, so there is no working Library without one.
+
+## Layout
+
+```
+src/
+├─ main.tsx, App.tsx        providers, router, app shell
+├─ lib/supabase.ts          browser client — auth only, all data goes via the API
+├─ lib/auth.tsx             session context
+├─ lib/api.ts               typed fetch wrapper, attaches the JWT
+├─ lib/sortTracks.ts        pure sort logic, unit tested
+├─ hooks/useTracks.ts       queries, mutations, extraction polling
+├─ types/xfade.ts           response shapes (see `npm run types:api`)
+├─ routes/                  Login, Library, TrackDetail
+└─ components/              TrackTable, UploadDialog, ExtractionStatus
+```
+
+## Notes
+
+**Polling is conditional.** Extraction is a background job with no push channel, so
+`useTracks` sets `refetchInterval` only while a track is `pending` or `processing`.
+An idle library makes no requests.
+
+**Key sorting follows the Camelot wheel.** As strings, `10A` sorts between `1A` and
+`2A` and neighbouring keys scatter — which defeats the point of sorting by key.
+
+**Unanalysed tracks sort last in both directions**, so a fresh upload with no BPM
+never displaces the rows you were looking at.
+
+**`npm run types:api`** regenerates types from a running backend's OpenAPI schema.
+The hand-written shapes in `types/xfade.ts` are what the views use; if the two
+disagree, the backend is right.

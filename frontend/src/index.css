@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Desktop-scale only for v1; mobile breakpoints are explicitly deferred
+   (build spec §3). */
+html {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
+}
