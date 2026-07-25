@@ -1,10 +1,11 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
+import { ComboLogger } from "./routes/ComboLogger";
 import { Library } from "./routes/Library";
 import { Login } from "./routes/Login";
 import { TrackDetail } from "./routes/TrackDetail";
 
-/** Placeholder until build spec §7 steps 8 and 9. */
+/** Placeholder until build spec §7 step 9. */
 function ComingSoon({ title }: { title: string }) {
   return (
     <div>
@@ -63,7 +64,7 @@ function Shell() {
         <Routes>
           <Route path="/" element={<Library />} />
           <Route path="/tracks/:trackId" element={<TrackDetail />} />
-          <Route path="/log" element={<ComingSoon title="Combo logger" />} />
+          <Route path="/log" element={<ComboLogger />} />
           <Route path="/sessions" element={<ComingSoon title="Session planner" />} />
           <Route path="*" element={<ComingSoon title="Not found" />} />
         </Routes>

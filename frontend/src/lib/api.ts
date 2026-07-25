@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { CompatibilityRead, ComboRead, TrackDetail } from "../types/xfade";
+import type { ComboCreate, CompatibilityRead, ComboRead, TrackDetail } from "../types/xfade";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -65,6 +65,13 @@ export const api = {
 
   listCombos: (trackId?: string) =>
     request<ComboRead[]>(`/combos${trackId ? `?track_id=${trackId}` : ""}`),
+
+  createCombo: (combo: ComboCreate) =>
+    request<ComboRead>("/combos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(combo),
+    }),
 
   getCompatibility: (trackA: string, trackB: string) =>
     request<CompatibilityRead>(`/compatibility?track_a=${trackA}&track_b=${trackB}`),

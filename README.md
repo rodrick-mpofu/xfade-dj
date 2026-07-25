@@ -18,9 +18,9 @@ docs/         design doc + build spec
 
 ## Status
 
-Build spec §7 steps 1–6 (the whole backend) and step 7 (React shell, Library, track
-detail) are done. Remaining: the combo logger (step 8) and session planner (step 9),
-which are stubbed as placeholder routes in the nav.
+Build spec §7 steps 1–8 are done: the whole backend, the React shell, Library, track
+detail, and the combo logger. Remaining: the session planner (step 9), stubbed as a
+placeholder route in the nav.
 
 The whole pipeline has been exercised end to end against a live local stack: upload
 → Storage → Essentia extraction → features → compatibility score, plus combo and

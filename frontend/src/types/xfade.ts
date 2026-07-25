@@ -38,6 +38,14 @@ export interface ComboNote {
   created_at: string;
 }
 
+export interface ComboCreate {
+  track_a_id: string;
+  track_b_id: string;
+  technique?: string | null;
+  rating?: number | null;
+  notes?: string[];
+}
+
 export interface ComboRead {
   id: string;
   user_id: string;

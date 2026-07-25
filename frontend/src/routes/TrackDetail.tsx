@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ExtractionStatusBadge } from "../components/ExtractionStatus";
-import { useTrack, useTrackCombos } from "../hooks/useTracks";
+import { useTrack, useTrackCombos, useTracks } from "../hooks/useTracks";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -15,6 +16,14 @@ export function TrackDetail() {
   const { trackId } = useParams<{ trackId: string }>();
   const { data: track, isPending, isError, error } = useTrack(trackId);
   const { data: combos } = useTrackCombos(trackId);
+
+  // The combo payload carries track ids, not titles. The library list is already
+  // cached by the Library view, so naming the other side costs nothing.
+  const { data: allTracks } = useTracks();
+  const titles = useMemo(
+    () => new Map((allTracks ?? []).map((t) => [t.id, t.title])),
+    [allTracks],
+  );
 
   if (isPending) return <p className="text-sm text-neutral-500">Loading…</p>;
 
@@ -61,16 +70,19 @@ export function TrackDetail() {
         <h2 className="text-lg font-semibold">Combos</h2>
         {combos && combos.length > 0 ? (
           <ul className="mt-3 divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-            {combos.map((combo) => (
+            {combos.map((combo) => {
+              const isSource = combo.track_a_id === track.id;
+              const otherId = isSource ? combo.track_b_id : combo.track_a_id;
+              return (
               <li key={combo.id} className="p-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">
-                    {combo.track_a_id === track.id ? "Mixed into" : "Mixed from"}{" "}
+                    {isSource ? "Mixed into" : "Mixed from"}{" "}
                     <Link
-                      to={`/tracks/${combo.track_a_id === track.id ? combo.track_b_id : combo.track_a_id}`}
+                      to={`/tracks/${otherId}`}
                       className="text-sky-700 hover:underline dark:text-sky-400"
                     >
-                      the other track
+                      {titles.get(otherId) ?? "another track"}
                     </Link>
                   </span>
                   <span className="text-neutral-500">
@@ -84,7 +96,8 @@ export function TrackDetail() {
                   </p>
                 ))}
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : (
           <p className="mt-2 text-sm text-neutral-500">

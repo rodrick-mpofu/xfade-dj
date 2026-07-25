@@ -16,7 +16,7 @@ npm install && npm run dev
 | Login | built | Supabase Auth |
 | Library — sortable table, BPM/key/energy | built | `GET /tracks` |
 | Track detail — extraction status, features, combos | built | `GET /tracks/{id}`, `GET /combos` |
-| Combo logger — live compatibility score | build spec §7 step 8 | `POST /combos`, `GET /compatibility` |
+| Combo logger — live compatibility score | built | `POST /combos`, `GET /compatibility` |
 | Session planner — reorderable setlist | build spec §7 step 9 | `/sessions` CRUD, `GET /compatibility` |
 
 The login screen is not in the spec's view list, but every backend endpoint requires
@@ -48,6 +48,15 @@ An idle library makes no requests.
 
 **Unanalysed tracks sort last in both directions**, so a fresh upload with no BPM
 never displaces the rows you were looking at.
+
+**The combo logger carries track B over to deck A after logging.** A set is a chain —
+what you mixed into is what you mix out of next — so logging a run of transitions
+does not mean re-picking the same track every time. Design doc §2 calls logging
+friction the make-or-break factor.
+
+**An unscoreable pair is still loggable.** If either track's analysis is pending or
+failed, the panel says which and the form still submits. The score is an aid, not a
+gate.
 
 **`npm run types:api`** regenerates types from a running backend's OpenAPI schema.
 The hand-written shapes in `types/xfade.ts` are what the views use; if the two
