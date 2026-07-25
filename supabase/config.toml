@@ -1,0 +1,40 @@
+# Supabase CLI configuration.
+# Docs: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "xfade"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[storage]
+enabled = true
+# Per-file cap for uploaded audio. Also enforced on the `tracks` bucket itself
+# (see the storage migration) so it applies to the hosted project too.
+file_size_limit = "100MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[analytics]
+enabled = false
