@@ -41,6 +41,10 @@ class FakeQuery:
         self._calls.append(("eq", (self._table, column, value)))
         return self
 
+    def in_(self, column: str, values: list[Any]) -> "FakeQuery":
+        self._calls.append(("in_", (self._table, column, values)))
+        return self
+
     def order(self, column: str, **kwargs: Any) -> "FakeQuery":
         return self
 

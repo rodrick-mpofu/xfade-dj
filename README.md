@@ -18,9 +18,10 @@ docs/         design doc + build spec
 
 ## Status
 
-Build spec §7 steps 1–4 are done: schema, FastAPI skeleton, track CRUD with Storage
-upload, and the Essentia extraction job. The `combos` and `sessions` routers are
-registered but still have no handlers; compatibility scoring (step 5) is next.
+Build spec §7 steps 1–5 are done: schema, FastAPI skeleton, track CRUD with Storage
+upload, the Essentia extraction job, and rules-based compatibility scoring. The
+`combos` and `sessions` routers are registered but still have no handlers — CRUD
+for those (step 6) is next, then the React views.
 
 Nothing has been exercised against a real Supabase project yet; the test suite runs
 against a fake client. The DSP itself has been verified in-container against
@@ -102,6 +103,26 @@ A minor came back as **119.97 BPM / 8A**.
 recorded but **not calibrated** (it saturates at 1.0; see the comment in
 `audio_analysis.py`). Neither feeds the v1 compatibility score, which uses Camelot
 and BPM only.
+
+## Compatibility scoring
+
+`GET /compatibility?track_a={id}&track_b={id}` returns a 0–100 score plus the
+reasoning, computed on the fly from the two `audio_features` rows. Pure rules — no
+model, no ML (design doc §5 defers that to v2).
+
+Harmony is weighted 0.6 against tempo's 0.4: a tempo gap is correctable with the
+pitch fader mid-mix, a key clash is not. Camelot distance is measured around the
+wheel, so 12A and 1A are neighbours. Tempos within ~3% score full marks, and
+half/double-time pairs (70 against 140) are matched on the doubled tempo rather
+than scored as a 100% miss.
+
+The weights and thresholds in [compatibility.py](backend/app/core/compatibility.py)
+are conventional DJ heuristics, not validated values. They are named constants so
+they are easy to argue with.
+
+When either track has no features yet, the response carries a `status` instead of a
+score: `pending_extraction` (still running, worth polling), `extraction_failed`
+(terminal, offer a retry), or `missing_features`.
 
 ## Design notes worth knowing
 

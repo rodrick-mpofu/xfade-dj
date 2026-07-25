@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import combos, health, sessions, tracks
+from app.api.routes import combos, compatibility, health, sessions, tracks
 from app.config import get_settings
 
 logger = logging.getLogger("xfade")
@@ -43,8 +43,9 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
-    # Routers are registered but have no handlers yet — build spec §7 steps 3 & 6.
     app.include_router(tracks.router)
+    app.include_router(compatibility.router)
+    # Registered but with no handlers yet — build spec §7 step 6.
     app.include_router(combos.router)
     app.include_router(sessions.router)
 
