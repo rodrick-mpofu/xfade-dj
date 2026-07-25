@@ -40,9 +40,14 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Without the CLI, paste the three files in `supabase/migrations/` into the SQL editor
+Without the CLI, paste the four files in `supabase/migrations/` into the SQL editor
 in filename order. For a local stack instead, `supabase start` applies them
-automatically (needs Docker).
+automatically (needs Docker), and `supabase db reset` replays them from scratch.
+
+The migrations have been applied and verified against a local stack: all six tables
+with RLS on and four policies each, two-user isolation confirmed (including that one
+user cannot log a combo referencing another's track, or write into their storage
+folder), plus the Camelot and `complete`-requires-values constraints.
 
 ### 2. Backend
 
@@ -104,6 +109,11 @@ and BPM only.
 the caller's JWT (`get_db` in [deps.py](backend/app/api/deps.py)), so the policies in
 `20260725120100_rls_policies.sql` do the enforcing. The service-role client bypasses
 RLS entirely and is reserved for the extraction job, which has no request context.
+
+**RLS needs GRANTs to go with it.** Privilege checks run *before* policies, so a
+table with perfect policies and no grant fails every request with 42501. That is what
+`20260725120300_grants.sql` is for. `anon` is granted nothing on purpose — v1 has no
+anonymous access.
 
 **Storage keys are load-bearing.** Objects live at `<user_id>/<track_id>.<ext>` in the
 private `tracks` bucket; the storage policies key off that first path segment.
