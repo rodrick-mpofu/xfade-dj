@@ -18,9 +18,14 @@ docs/         design doc + build spec
 
 ## Status
 
-Build spec §7 steps 1–8 are done: the whole backend, the React shell, Library, track
-detail, and the combo logger. Remaining: the session planner (step 9), stubbed as a
-placeholder route in the nav.
+**v1 is complete.** All nine steps of the build spec §7 order are done, and every item
+in the design doc §8 MVP scope is built: track library with upload, manual combo
+logging with notes/technique/rating, session planning, Essentia feature extraction,
+and rules-based Camelot/BPM compatibility.
+
+Deferred by design (design doc §8, build spec §3): content-based recommendations,
+collaborative signals, auto-detection from recorded sets, mobile-responsive layout,
+and DJ-software library import.
 
 The whole pipeline has been exercised end to end against a live local stack: upload
 → Storage → Essentia extraction → features → compatibility score, plus combo and

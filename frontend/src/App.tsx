@@ -1,16 +1,23 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { Link, NavLink, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { ComboLogger } from "./routes/ComboLogger";
 import { Library } from "./routes/Library";
 import { Login } from "./routes/Login";
+import { SessionPlanner } from "./routes/SessionPlanner";
+import { Sessions } from "./routes/Sessions";
 import { TrackDetail } from "./routes/TrackDetail";
 
-/** Placeholder until build spec §7 step 9. */
-function ComingSoon({ title }: { title: string }) {
+function NotFound() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Not built yet.</p>
+      <h1 className="text-2xl font-semibold">Not found</h1>
+      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        That page does not exist.{" "}
+        <Link to="/" className="text-sky-700 hover:underline dark:text-sky-400">
+          Back to the library
+        </Link>
+        .
+      </p>
     </div>
   );
 }
@@ -65,8 +72,9 @@ function Shell() {
           <Route path="/" element={<Library />} />
           <Route path="/tracks/:trackId" element={<TrackDetail />} />
           <Route path="/log" element={<ComboLogger />} />
-          <Route path="/sessions" element={<ComingSoon title="Session planner" />} />
-          <Route path="*" element={<ComingSoon title="Not found" />} />
+          <Route path="/sessions" element={<Sessions />} />
+          <Route path="/sessions/:sessionId" element={<SessionPlanner />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>

@@ -17,7 +17,8 @@ npm install && npm run dev
 | Library — sortable table, BPM/key/energy | built | `GET /tracks` |
 | Track detail — extraction status, features, combos | built | `GET /tracks/{id}`, `GET /combos` |
 | Combo logger — live compatibility score | built | `POST /combos`, `GET /compatibility` |
-| Session planner — reorderable setlist | build spec §7 step 9 | `/sessions` CRUD, `GET /compatibility` |
+| Sessions — list and create | built | `GET/POST /sessions` |
+| Session planner — reorderable setlist | built | `/sessions` CRUD, `GET /compatibility` |
 
 The login screen is not in the spec's view list, but every backend endpoint requires
 a JWT, so there is no working Library without one.
@@ -57,6 +58,15 @@ friction the make-or-break factor.
 **An unscoreable pair is still loggable.** If either track's analysis is pending or
 failed, the panel says which and the form still submits. The score is an aid, not a
 gate.
+
+**Reordering a setlist is optimistic, and rolls back on failure.** Waiting a round
+trip per click makes reordering feel broken, so the move applies immediately and the
+previous order is restored if the write fails — the UI never silently disagrees with
+the database.
+
+**Reorder uses buttons, not drag-and-drop.** Accessible and testable with no extra
+dependency. Drag-and-drop would be nicer to use and is a reasonable later change; the
+backend primitive (replace the whole ordered list) already supports it.
 
 **`npm run types:api`** regenerates types from a running backend's OpenAPI schema.
 The hand-written shapes in `types/xfade.ts` are what the views use; if the two

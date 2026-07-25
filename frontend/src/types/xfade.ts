@@ -57,6 +57,27 @@ export interface ComboRead {
   notes: ComboNote[];
 }
 
+export interface SessionTrackRead {
+  id: string;
+  session_id: string;
+  track_id: string;
+  position: number;
+}
+
+export interface SessionRead {
+  id: string;
+  user_id: string;
+  name: string;
+  planned_for: string | null;
+  created_at: string;
+  tracks: SessionTrackRead[];
+}
+
+export interface SessionCreate {
+  name: string;
+  planned_for?: string | null;
+}
+
 export type CompatibilityStatus =
   | "ok"
   | "pending_extraction"

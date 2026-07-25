@@ -1,5 +1,13 @@
 import { supabase } from "./supabase";
-import type { ComboCreate, CompatibilityRead, ComboRead, TrackDetail } from "../types/xfade";
+import type {
+  ComboCreate,
+  ComboRead,
+  CompatibilityRead,
+  SessionCreate,
+  SessionRead,
+  SessionTrackRead,
+  TrackDetail,
+} from "../types/xfade";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -75,4 +83,30 @@ export const api = {
 
   getCompatibility: (trackA: string, trackB: string) =>
     request<CompatibilityRead>(`/compatibility?track_a=${trackA}&track_b=${trackB}`),
+
+  listSessions: () => request<SessionRead[]>("/sessions"),
+
+  getSession: (id: string) => request<SessionRead>(`/sessions/${id}`),
+
+  createSession: (session: SessionCreate) =>
+    request<SessionRead>("/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(session),
+    }),
+
+  addSessionTrack: (sessionId: string, trackId: string) =>
+    request<SessionTrackRead>(`/sessions/${sessionId}/tracks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ track_id: trackId }),
+    }),
+
+  /** Replaces the whole ordered setlist — one call covers reorder and remove. */
+  replaceSessionTracks: (sessionId: string, trackIds: string[]) =>
+    request<SessionTrackRead[]>(`/sessions/${sessionId}/tracks`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ track_ids: trackIds }),
+    }),
 };
