@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push makes an in-flight run irrelevant; do not pay for both.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      # 3.11 to match the Docker image, which is pinned there because Essentia's
+      # wheels are. Keeping CI on the same minor version means a passing run
+      # actually says something about what gets deployed.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      # Not the [audio] extra: Essentia is imported lazily and never touched by the
+      # suite, so installing it here would add minutes and prove nothing.
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format check
+        run: ruff format --check .
+
+      - name: Tests
+        run: pytest -q
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Catches what the tests cannot: the vitest/vite version clash that broke this
+      # build once was a type error, not a failing assertion.
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Tests
+        run: npm test
+
+  migrations:
+    name: Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # The slow job (it pulls the local stack), and the one that earns its keep.
+      # The RLS policies once shipped without table GRANTs, which every unit test
+      # passed straight through — only applying the SQL to a real Postgres caught
+      # it. `db reset` replays every migration from scratch, in order.
+      - name: Start local stack
+        run: supabase start
+
+      - name: Apply migrations from scratch
+        run: supabase db reset
+
+      - name: Stop
+        if: always()
+        run: supabase stop

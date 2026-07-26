@@ -1,5 +1,7 @@
 # Xfade
 
+[![CI](https://github.com/rodrick-mpofu/xfade-dj/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrick-mpofu/xfade-dj/actions/workflows/ci.yml)
+
 ML-forward DJ combo & transition logger. Log the track combinations you discover,
 get compatibility scoring grounded in real audio analysis rather than typed-in metadata.
 
