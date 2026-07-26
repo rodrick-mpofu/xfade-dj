@@ -1,10 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { useCreateSession, useSessions } from "../hooks/useSessions";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { useCreateSession, useDeleteSession, useSessions } from "../hooks/useSessions";
+import type { SessionRead } from "../types/xfade";
 
 export function Sessions() {
   const { data: sessions, isPending, isError, error } = useSessions();
   const createSession = useCreateSession();
+  const deleteSession = useDeleteSession();
+  const [deleting, setDeleting] = useState<SessionRead | null>(null);
   const [name, setName] = useState("");
   const [plannedFor, setPlannedFor] = useState("");
 
@@ -97,15 +101,41 @@ export function Sessions() {
                 >
                   {session.name}
                 </Link>
-                <span className="text-sm text-neutral-500">
+                <span className="flex items-center gap-3 text-sm text-neutral-500">
                   {session.tracks.length} track{session.tracks.length === 1 ? "" : "s"}
                   {session.planned_for &&
                     ` · ${new Date(session.planned_for).toLocaleDateString()}`}
+                  <button
+                    type="button"
+                    aria-label={`Delete ${session.name}`}
+                    onClick={() => setDeleting(session)}
+                    className="rounded px-2 py-0.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  >
+                    ✕
+                  </button>
                 </span>
               </li>
             ))}
           </ul>
         ))}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Delete “${deleting.name}”?`}
+          consequence={
+            <p>
+              The setlist is discarded. Your tracks and any combos you logged are not
+              affected.
+            </p>
+          }
+          isPending={deleteSession.isPending}
+          error={(deleteSession.error as Error) ?? null}
+          onCancel={() => setDeleting(null)}
+          onConfirm={() =>
+            deleteSession.mutate(deleting.id, { onSuccess: () => setDeleting(null) })
+          }
+        />
+      )}
     </div>
   );
 }

@@ -71,6 +71,16 @@ export const api = {
     return request<TrackDetail>("/tracks", { method: "POST", body: form });
   },
 
+  deleteTrack: (id: string) => request<void>(`/tracks/${id}`, { method: "DELETE" }),
+
+  /** Re-queue extraction. Works from any state, not just `failed`. */
+  retryExtraction: (id: string) =>
+    request<TrackDetail>(`/tracks/${id}/extract`, { method: "POST" }),
+
+  deleteCombo: (id: string) => request<void>(`/combos/${id}`, { method: "DELETE" }),
+
+  deleteSession: (id: string) => request<void>(`/sessions/${id}`, { method: "DELETE" }),
+
   listCombos: (trackId?: string) =>
     request<ComboRead[]>(`/combos${trackId ? `?track_id=${trackId}` : ""}`),
 

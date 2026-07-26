@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TrackDetail } from "./TrackDetail";
@@ -7,11 +8,23 @@ import type { ComboRead, TrackDetail as Track } from "../types/xfade";
 const useTrack = vi.fn();
 const useTrackCombos = vi.fn();
 const useTracks = vi.fn();
+const retryMutate = vi.fn();
+const deleteTrackMutate = vi.fn();
+const deleteComboMutate = vi.fn();
+const navigate = vi.fn();
 
 vi.mock("../hooks/useTracks", () => ({
   useTrack: () => useTrack(),
   useTrackCombos: () => useTrackCombos(),
   useTracks: () => useTracks(),
+  useRetryExtraction: () => ({ mutate: retryMutate, isPending: false, isError: false }),
+  useDeleteTrack: () => ({ mutate: deleteTrackMutate, isPending: false, error: null }),
+  useDeleteCombo: () => ({ mutate: deleteComboMutate, isPending: false, error: null }),
+}));
+
+vi.mock("react-router-dom", async () => ({
+  ...(await vi.importActual<typeof import("react-router-dom")>("react-router-dom")),
+  useNavigate: () => navigate,
 }));
 
 function track(id: string, title: string): Track {
@@ -60,6 +73,10 @@ const renderDetail = () =>
 
 describe("TrackDetail", () => {
   beforeEach(() => {
+    retryMutate.mockReset();
+    deleteTrackMutate.mockReset();
+    deleteComboMutate.mockReset();
+    navigate.mockReset();
     useTrack.mockReturnValue({ data: track("a", "Windowlicker"), isPending: false, isError: false });
     useTrackCombos.mockReturnValue({ data: [] });
     useTracks.mockReturnValue({ data: [track("a", "Windowlicker"), track("b", "Come to Daddy")] });
@@ -118,5 +135,108 @@ describe("TrackDetail", () => {
   it("says so when there are no combos yet", () => {
     renderDetail();
     expect(screen.getByText(/no combos logged/i)).toBeInTheDocument();
+  });
+
+  // --- retry ---------------------------------------------------------------
+
+  it("re-queues extraction", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /re-analyse/i }));
+    expect(retryMutate).toHaveBeenCalledWith("a");
+  });
+
+  it("will not re-queue while a job is already running", () => {
+    const running = track("a", "Windowlicker");
+    running.audio_features = { ...running.audio_features!, status: "processing" };
+    useTrack.mockReturnValue({ data: running, isPending: false, isError: false });
+    renderDetail();
+
+    expect(screen.getByRole("button", { name: /re-analyse/i })).toBeDisabled();
+  });
+
+  it("offers re-analysis on a failed track", () => {
+    const failed = track("a", "Windowlicker");
+    failed.audio_features = {
+      ...failed.audio_features!,
+      status: "failed",
+      error_message: "Too short to analyse",
+    };
+    useTrack.mockReturnValue({ data: failed, isPending: false, isError: false });
+    renderDetail();
+
+    expect(screen.getByRole("button", { name: /re-analyse/i })).toBeEnabled();
+    expect(screen.getByText(/too short to analyse/i)).toBeInTheDocument();
+  });
+
+  // --- delete --------------------------------------------------------------
+
+  it("asks before deleting", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(deleteTrackMutate).not.toHaveBeenCalled();
+  });
+
+  it("warns that logged combos go too, and how many", async () => {
+    // The cascade is the whole reason this dialog exists: "delete" alone does not
+    // say that the transitions you logged disappear with the track.
+    const user = userEvent.setup();
+    useTrackCombos.mockReturnValue({ data: [combo(), combo({ id: "c2" })] });
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    expect(screen.getByText(/2 logged combos/i)).toBeInTheDocument();
+  });
+
+  it("does not claim combos will be lost when there are none", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    expect(screen.queryByText(/logged combo/i)).not.toBeInTheDocument();
+  });
+
+  it("cancelling leaves the track alone", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(deleteTrackMutate).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("deletes on confirmation and returns to the library", async () => {
+    const user = userEvent.setup();
+    deleteTrackMutate.mockImplementation((_id, options) => options.onSuccess());
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    // Scoped to the dialog: the page's own Delete button is still on screen.
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^delete$/i }));
+
+    expect(deleteTrackMutate).toHaveBeenCalled();
+    expect(deleteTrackMutate.mock.calls[0]![0]).toBe("a");
+    // Staying on a detail page for a track that no longer exists would 404.
+    expect(navigate).toHaveBeenCalledWith("/");
+  });
+
+  it("asks before deleting a combo", async () => {
+    const user = userEvent.setup();
+    useTrackCombos.mockReturnValue({ data: [combo()] });
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /delete combo/i }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(deleteComboMutate).not.toHaveBeenCalled();
   });
 });

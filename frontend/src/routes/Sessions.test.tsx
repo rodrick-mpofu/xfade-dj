@@ -7,10 +7,12 @@ import type { SessionRead } from "../types/xfade";
 
 const useSessions = vi.fn();
 const createMutate = vi.fn();
+const deleteMutate = vi.fn();
 
 vi.mock("../hooks/useSessions", () => ({
   useSessions: () => useSessions(),
   useCreateSession: () => ({ mutate: createMutate, isPending: false, isError: false }),
+  useDeleteSession: () => ({ mutate: deleteMutate, isPending: false, error: null }),
 }));
 
 const session: SessionRead = {
@@ -35,6 +37,7 @@ const renderSessions = () =>
 describe("Sessions", () => {
   beforeEach(() => {
     createMutate.mockReset();
+    deleteMutate.mockReset();
     useSessions.mockReturnValue({ isPending: false, isError: false, data: [session] });
   });
 
@@ -88,6 +91,35 @@ describe("Sessions", () => {
   it("will not create a session without a name", () => {
     renderSessions();
     expect(screen.getByRole("button", { name: /new session/i })).toBeDisabled();
+  });
+
+  it("asks before deleting a session", async () => {
+    const user = userEvent.setup();
+    renderSessions();
+
+    await user.click(screen.getByRole("button", { name: /delete friday warm-up/i }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(deleteMutate).not.toHaveBeenCalled();
+  });
+
+  it("reassures that deleting a setlist keeps the music", async () => {
+    const user = userEvent.setup();
+    renderSessions();
+
+    await user.click(screen.getByRole("button", { name: /delete friday warm-up/i }));
+
+    expect(screen.getByText(/tracks and any combos you logged are not affected/i)).toBeInTheDocument();
+  });
+
+  it("deletes on confirmation", async () => {
+    const user = userEvent.setup();
+    renderSessions();
+
+    await user.click(screen.getByRole("button", { name: /delete friday warm-up/i }));
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+
+    expect(deleteMutate.mock.calls[0]![0]).toBe("s1");
   });
 
   it("surfaces a load error", () => {

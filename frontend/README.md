@@ -17,7 +17,7 @@ npm install && npm run dev
 | Library — sortable table, BPM/key/energy | built | `GET /tracks` |
 | Track detail — extraction status, features, combos | built | `GET /tracks/{id}`, `GET /combos` |
 | Combo logger — live compatibility score | built | `POST /combos`, `GET /compatibility` |
-| Sessions — list and create | built | `GET/POST /sessions` |
+| Sessions — list, create, delete | built | `GET/POST/DELETE /sessions` |
 | Session planner — reorderable setlist | built | `/sessions` CRUD, `GET /compatibility` |
 
 The login screen is not in the spec's view list, but every backend endpoint requires
@@ -58,6 +58,11 @@ friction the make-or-break factor.
 **An unscoreable pair is still loggable.** If either track's analysis is pending or
 failed, the panel says which and the form still submits. The score is an aid, not a
 gate.
+
+**Destructive actions state their consequence, not just their name.** `ConfirmDialog`
+takes a `consequence` prop because "Delete" alone is a lie here: deleting a track also
+deletes every combo it appears in, so the dialog counts them. The session dialog says
+the opposite — that the music is *not* affected — because that is equally non-obvious.
 
 **Reordering a setlist is optimistic, and rolls back on failure.** Waiting a round
 trip per click makes reordering feel broken, so the move applies immediately and the

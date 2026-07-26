@@ -37,6 +37,42 @@ export function useTrackCombos(trackId: string | undefined) {
   });
 }
 
+export function useDeleteTrack() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (trackId: string) => api.deleteTrack(trackId),
+    onSuccess: () => {
+      // Combos and setlists cascade in the database, so their caches are stale too.
+      queryClient.invalidateQueries({ queryKey: ["tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["combos"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+}
+
+export function useRetryExtraction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (trackId: string) => api.retryExtraction(trackId),
+    onSuccess: (_data, trackId) => {
+      // Back to `pending`, which turns the polling in useTrack/useTracks back on.
+      queryClient.invalidateQueries({ queryKey: ["tracks", trackId] });
+      queryClient.invalidateQueries({ queryKey: ["tracks"] });
+    },
+  });
+}
+
+export function useDeleteCombo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (comboId: string) => api.deleteCombo(comboId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["combos"] }),
+  });
+}
+
 export function useUploadTrack() {
   const queryClient = useQueryClient();
 

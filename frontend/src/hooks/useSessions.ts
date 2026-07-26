@@ -22,6 +22,14 @@ export function useCreateSession() {
   });
 }
 
+export function useDeleteSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) => api.deleteSession(sessionId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sessions"] }),
+  });
+}
+
 export function useAddSessionTrack(sessionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
