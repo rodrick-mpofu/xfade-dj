@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ExtractionStatusBadge } from "../components/ExtractionStatus";
+import { Button } from "../components/ui/Button";
+import { Panel } from "../components/ui/Panel";
+import { Pill, formatDuration } from "../components/ui/Pill";
 import {
   useDeleteCombo,
   useDeleteTrack,
@@ -15,10 +18,10 @@ type Confirming = { kind: "track" } | { kind: "combo"; id: string } | null;
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <dt className="text-xs uppercase tracking-wide text-neutral-500">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd>
-    </div>
+    <Panel className="p-4">
+      <dt className="text-xs tracking-[0.12em] text-muted uppercase">{label}</dt>
+      <dd className="data mt-1 text-2xl font-semibold">{value}</dd>
+    </Panel>
   );
 }
 
@@ -41,14 +44,11 @@ export function TrackDetail() {
     [allTracks],
   );
 
-  if (isPending) return <p className="text-sm text-neutral-500">Loading…</p>;
+  if (isPending) return <p className="text-sm text-muted">Loading…</p>;
 
   if (isError) {
     return (
-      <p
-        role="alert"
-        className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300"
-      >
+      <p role="alert" className="rounded-lg bg-rose-950/40 p-4 text-sm text-rose-300">
         {(error as Error).message}
       </p>
     );
@@ -61,54 +61,48 @@ export function TrackDetail() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link to="/" className="text-sm text-sky-700 hover:underline dark:text-sky-400">
+          <Link to="/library" className="text-sm text-accent hover:underline">
             ← Library
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">{track.title}</h1>
-          <p className="text-neutral-500 dark:text-neutral-400">
-            {track.artist ?? "Unknown artist"}
-          </p>
-          <div className="mt-3">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{track.title}</h1>
+          <p className="text-muted">{track.artist ?? "Unknown artist"}</p>
+          <div className="mt-3 flex items-center gap-2">
             <ExtractionStatusBadge status={features?.status} error={features?.error_message} />
+            {track.genre && <Pill>{track.genre}</Pill>}
           </div>
         </div>
 
         <div className="flex shrink-0 gap-2">
-          <button
-            type="button"
+          <Button
             onClick={() => trackId && retry.mutate(trackId)}
             // Re-running while a job is in flight would race it; the backend
             // refuses too, but there is no reason to offer the click.
             disabled={features?.status === "processing" || retry.isPending}
-            className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
           >
             {retry.isPending ? "Queueing…" : "Re-analyse"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirming({ kind: "track" })}
-            className="rounded-md border border-rose-300 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950"
-          >
+          </Button>
+          <Button variant="danger" onClick={() => setConfirming({ kind: "track" })}>
             Delete
-          </button>
+          </Button>
         </div>
       </div>
 
       {retry.isError && (
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+        <p role="alert" className="text-sm text-rose-400">
           {(retry.error as Error).message}
         </p>
       )}
 
       {features?.status === "failed" && features.error_message && (
-        <p className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+        <p className="rounded-lg bg-rose-950/40 p-4 text-sm text-rose-300">
           Analysis failed: {features.error_message}
         </p>
       )}
 
-      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <Stat label="BPM" value={features?.bpm != null ? features.bpm.toFixed(2) : "—"} />
         <Stat label="Key" value={features?.key_camelot ?? "—"} />
+        <Stat label="Duration" value={formatDuration(features?.duration_seconds)} />
         <Stat label="Energy" value={features?.energy != null ? features.energy.toFixed(2) : "—"} />
         <Stat
           label="Danceability"
@@ -119,46 +113,45 @@ export function TrackDetail() {
       <section>
         <h2 className="text-lg font-semibold">Combos</h2>
         {combos && combos.length > 0 ? (
-          <ul className="mt-3 divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          <Panel className="mt-3 divide-y divide-edge">
             {combos.map((combo) => {
               const isSource = combo.track_a_id === track.id;
               const otherId = isSource ? combo.track_b_id : combo.track_a_id;
               return (
-                <li key={combo.id} className="p-4 text-sm">
+                <div key={combo.id} className="p-4 text-sm">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium">
-                      {isSource ? "Mixed into" : "Mixed from"}{" "}
-                      <Link
-                        to={`/tracks/${otherId}`}
-                        className="text-sky-700 hover:underline dark:text-sky-400"
-                      >
+                    <span>
+                      <span className="text-muted">{isSource ? "Mixed into" : "Mixed from"}</span>{" "}
+                      <Link to={`/tracks/${otherId}`} className="font-medium hover:text-accent">
                         {titles.get(otherId) ?? "another track"}
                       </Link>
                     </span>
-                    <span className="flex items-center gap-3 text-neutral-500">
+                    <span className="flex items-center gap-3 text-muted">
                       {combo.technique ?? "—"}
-                      {combo.rating != null && ` · ${"★".repeat(combo.rating)}`}
+                      {combo.rating != null && (
+                        <span className="text-accent">{"★".repeat(combo.rating)}</span>
+                      )}
                       <button
                         type="button"
                         aria-label="Delete combo"
                         onClick={() => setConfirming({ kind: "combo", id: combo.id })}
-                        className="rounded px-2 py-0.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        className="rounded px-2 py-0.5 transition hover:bg-raise hover:text-text"
                       >
                         ✕
                       </button>
                     </span>
                   </div>
                   {combo.notes.map((note) => (
-                    <p key={note.id} className="mt-1 text-neutral-600 dark:text-neutral-400">
+                    <p key={note.id} className="data mt-1 text-xs text-muted">
                       {note.text}
                     </p>
                   ))}
-                </li>
+                </div>
               );
             })}
-          </ul>
+          </Panel>
         ) : (
-          <p className="mt-2 text-sm text-neutral-500">No combos logged with this track yet.</p>
+          <p className="mt-2 text-sm text-muted">No combos logged with this track yet.</p>
         )}
       </section>
 
@@ -169,12 +162,12 @@ export function TrackDetail() {
             <>
               <p>The audio file and its analysis will be removed.</p>
               {comboCount > 0 && (
-                <p className="mt-2 font-medium text-rose-700 dark:text-rose-400">
+                <p className="font-medium text-rose-400">
                   This also deletes {comboCount} logged combo
                   {comboCount === 1 ? "" : "s"} involving this track.
                 </p>
               )}
-              <p className="mt-2">This cannot be undone.</p>
+              <p>This cannot be undone.</p>
             </>
           }
           isPending={deleteTrack.isPending}
@@ -183,7 +176,7 @@ export function TrackDetail() {
           onConfirm={() =>
             trackId &&
             deleteTrack.mutate(trackId, {
-              onSuccess: () => navigate("/"),
+              onSuccess: () => navigate("/library"),
             })
           }
         />

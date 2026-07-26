@@ -1,11 +1,36 @@
 @import "tailwindcss";
 
-/* Desktop-scale only for v1; mobile breakpoints are explicitly deferred
-   (build spec §3). */
+/* Dark only. The reference design is dark, DJ software is dark because it is used
+   in dark rooms, and supporting both doubles every colour decision for no benefit
+   here. Dropping the light theme is why the `dark:` variants are gone. */
+@theme {
+  --color-ink: #07080b;
+  --color-panel: #0e1015;
+  --color-raise: #14171e;
+  --color-edge: #1e222b;
+  --color-text: #e9eaee;
+  --color-muted: #8b909d;
+  --color-accent: #22d3ee;
+  --color-accent-ink: #062b33;
+
+  --font-mono:
+    ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
 html {
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
 body {
-  @apply bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
+  @apply bg-ink text-text antialiased;
 }
+
+/* Numeric data — BPM, keys, durations, dates — is for scanning down a column, not
+   reading as prose. Tabular monospace keeps digits aligned so the eye can compare
+   rows without re-anchoring. */
+.data {
+  @apply font-mono tabular-nums;
+}
+
+/* Desktop-scale only for v1; mobile breakpoints are explicitly deferred
+   (build spec §3). */

@@ -15,6 +15,7 @@ export interface AudioFeatures {
   key_camelot: string | null;
   energy: number | null;
   danceability: number | null;
+  duration_seconds: number | null;
   structure_markers: Record<string, unknown> | null;
   error_message: string | null;
   analyzed_at: string | null;
@@ -25,6 +26,8 @@ export interface TrackDetail {
   user_id: string;
   title: string;
   artist: string | null;
+  /** From the file's ID3 tag where present, otherwise typed in. Never derived. */
+  genre: string | null;
   file_ref: string | null;
   source: string;
   created_at: string;

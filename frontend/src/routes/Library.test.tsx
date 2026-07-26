@@ -15,6 +15,7 @@ const sample: TrackDetail = {
   user_id: "u",
   title: "Windowlicker",
   artist: "Aphex Twin",
+  genre: null,
   file_ref: null,
   source: "upload",
   created_at: "2026-07-25T12:00:00Z",
@@ -25,6 +26,7 @@ const sample: TrackDetail = {
     key_camelot: "8A",
     energy: 0.4,
     danceability: 0.5,
+      duration_seconds: 210,
     structure_markers: null,
     error_message: null,
     analyzed_at: null,
@@ -62,7 +64,7 @@ describe("Library", () => {
     useTracks.mockReturnValue({ isPending: false, isError: false, data: [sample] });
     renderLibrary();
 
-    expect(screen.getByText("1 track")).toBeInTheDocument();
+    expect(screen.getByText(/1 track,/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Windowlicker" })).toBeInTheDocument();
   });
 
@@ -74,7 +76,7 @@ describe("Library", () => {
     });
     renderLibrary();
 
-    expect(screen.getByText("2 tracks")).toBeInTheDocument();
+    expect(screen.getByText(/2 tracks,/)).toBeInTheDocument();
   });
 
   it("offers a way to add a track", () => {

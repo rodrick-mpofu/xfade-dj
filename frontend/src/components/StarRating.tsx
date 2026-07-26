@@ -18,10 +18,8 @@ export function StarRating({
           onClick={() => onChange(value === star ? null : star)}
           aria-label={`${star} star${star === 1 ? "" : "s"}`}
           aria-pressed={value === star}
-          className={`text-2xl leading-none transition-colors ${
-            value !== null && star <= value
-              ? "text-amber-500"
-              : "text-neutral-300 hover:text-amber-300 dark:text-neutral-700"
+          className={`text-2xl leading-none transition ${
+            value !== null && star <= value ? "text-accent" : "text-edge hover:text-accent/50"
           }`}
         >
           ★
@@ -31,7 +29,7 @@ export function StarRating({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="ml-2 text-xs text-neutral-500 hover:underline"
+          className="ml-2 text-xs text-muted hover:underline"
         >
           Clear
         </button>

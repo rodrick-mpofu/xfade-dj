@@ -33,6 +33,7 @@ function track(id: string, title: string): Track {
     user_id: "u",
     title,
     artist: "Aphex Twin",
+    genre: null,
     file_ref: null,
     source: "upload",
     created_at: "2026-07-25T12:00:00Z",
@@ -43,6 +44,7 @@ function track(id: string, title: string): Track {
       key_camelot: "8A",
       energy: 0.18,
       danceability: 1,
+      duration_seconds: 210,
       structure_markers: null,
       error_message: null,
       analyzed_at: null,
@@ -226,7 +228,7 @@ describe("TrackDetail", () => {
     expect(deleteTrackMutate).toHaveBeenCalled();
     expect(deleteTrackMutate.mock.calls[0]![0]).toBe("a");
     // Staying on a detail page for a track that no longer exists would 404.
-    expect(navigate).toHaveBeenCalledWith("/");
+    expect(navigate).toHaveBeenCalledWith("/library");
   });
 
   it("asks before deleting a combo", async () => {

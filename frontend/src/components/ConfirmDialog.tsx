@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button } from "./ui/Button";
 
 /**
  * Confirmation for destructive actions.
@@ -26,20 +27,18 @@ export function ConfirmDialog({
 }) {
   return (
     <div
-      className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-20 flex items-center justify-center bg-black/70 p-4"
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900">
+      <div className="w-full max-w-md rounded-xl border border-edge bg-panel p-6 shadow-2xl">
         <h2 className="text-lg font-semibold">{title}</h2>
 
-        {consequence && (
-          <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{consequence}</div>
-        )}
+        {consequence && <div className="mt-2 space-y-2 text-sm text-muted">{consequence}</div>}
 
         {error && (
-          <p role="alert" className="mt-4 text-sm text-rose-600 dark:text-rose-400">
+          <p role="alert" className="mt-4 text-sm text-rose-400">
             {error.message}
           </p>
         )}
@@ -49,18 +48,18 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="rounded-md px-3 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="rounded-md px-3 py-1.5 text-sm text-muted transition hover:bg-raise hover:text-text"
           >
             Cancel
           </button>
-          <button
-            type="button"
+          <Button
+            variant="danger"
             onClick={onConfirm}
             disabled={isPending}
-            className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+            className="border-rose-700 bg-rose-600/90 !text-white hover:bg-rose-600"
           >
             {isPending ? "Deleting…" : confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

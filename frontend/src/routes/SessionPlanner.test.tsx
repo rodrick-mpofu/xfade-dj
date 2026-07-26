@@ -23,6 +23,7 @@ function track(id: string, title: string, key: string): TrackDetail {
     user_id: "u",
     title,
     artist: "Aphex Twin",
+    genre: null,
     file_ref: null,
     source: "upload",
     created_at: "2026-07-25T12:00:00Z",
@@ -33,6 +34,7 @@ function track(id: string, title: string, key: string): TrackDetail {
       key_camelot: key,
       energy: 0.4,
       danceability: 0.5,
+      duration_seconds: 210,
       structure_markers: null,
       error_message: null,
       analyzed_at: null,
@@ -164,7 +166,7 @@ describe("SessionPlanner", () => {
     const user = userEvent.setup();
     renderPlanner();
 
-    await user.click(screen.getByRole("button", { name: /^add track$/i }));
+    await user.click(screen.getByRole("button", { name: /add track/i }));
     await user.click(screen.getByRole("button", { name: /Third/ }));
 
     expect(addMutate).toHaveBeenCalledWith("c");

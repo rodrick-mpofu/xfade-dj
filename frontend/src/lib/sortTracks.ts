@@ -1,6 +1,13 @@
 import type { TrackDetail } from "../types/xfade";
 
-export type SortKey = "title" | "artist" | "bpm" | "key_camelot" | "energy" | "created_at";
+export type SortKey =
+  | "title"
+  | "artist"
+  | "bpm"
+  | "key_camelot"
+  | "genre"
+  | "duration"
+  | "created_at";
 export type SortDirection = "asc" | "desc";
 
 /**
@@ -40,10 +47,12 @@ function valueFor(track: TrackDetail, key: SortKey): string | number | null {
       return track.artist;
     case "created_at":
       return track.created_at;
+    case "genre":
+      return track.genre;
     case "bpm":
       return track.audio_features?.bpm ?? null;
-    case "energy":
-      return track.audio_features?.energy ?? null;
+    case "duration":
+      return track.audio_features?.duration_seconds ?? null;
     case "key_camelot":
       return camelotOrder(track.audio_features?.key_camelot ?? null);
   }

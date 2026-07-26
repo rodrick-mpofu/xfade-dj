@@ -3,6 +3,12 @@
 React + TypeScript, Vite, React Router, TanStack Query, Tailwind. Desktop-scale
 only; mobile breakpoints are explicitly deferred (build spec §3).
 
+**Dark only.** DJ software is used in dark rooms, and supporting both themes doubles
+every colour decision for no benefit here — which is why there are no `dark:`
+variants. The palette is six semantic tokens declared in `src/index.css` under
+`@theme` (`ink`, `panel`, `raise`, `edge`, `text`, `muted`, `accent`), so a
+re-theme is one file.
+
 Setup and environment variables are in the [root README](../README.md).
 
 ```bash
@@ -11,14 +17,20 @@ npm install && npm run dev
 
 ## Views
 
-| View | Status | Depends on |
+| Route | View | Status |
 |---|---|---|
-| Login | built | Supabase Auth |
-| Library — sortable table, BPM/key/energy | built | `GET /tracks` |
-| Track detail — extraction status, features, combos | built | `GET /tracks/{id}`, `GET /combos` |
-| Combo logger — live compatibility score | built | `POST /combos`, `GET /compatibility` |
-| Sessions — list, create, delete | built | `GET/POST/DELETE /sessions` |
-| Session planner — reorderable setlist | built | `/sessions` CRUD, `GET /compatibility` |
+| — | Login | built |
+| `/library` | Library — sortable table, search, BPM/key/genre/duration | built |
+| `/tracks/:id` | Track detail — features, retry, delete, combos | built |
+| `/log` | Combo logger — live compatibility score | built |
+| `/sessions` | Sessions — list, create, delete | built |
+| `/sessions/:id` | Session planner — reorderable setlist | built |
+| `/` | Dashboard — stat tiles, top combos, recent sessions | stage C |
+| `/combos` | Combos list | stage C |
+| `/suggestions` | Harmonic suggestions | stage C |
+
+Note `/` is the Dashboard, not the Library — the Library moved to `/library` when the
+sidebar went in.
 
 The login screen is not in the spec's view list, but every backend endpoint requires
 a JWT, so there is no working Library without one.

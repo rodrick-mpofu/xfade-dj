@@ -1,16 +1,11 @@
 import type { CompatibilityRead } from "../types/xfade";
+import { Panel } from "./ui/Panel";
 
 /** Bands are presentational only — the score itself comes from the backend rules. */
-function scoreStyle(score: number): string {
-  if (score >= 80) return "text-emerald-600 dark:text-emerald-400";
-  if (score >= 55) return "text-amber-600 dark:text-amber-400";
-  return "text-rose-600 dark:text-rose-400";
-}
-
-function Frame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">{children}</div>
-  );
+export function scoreTone(score: number): string {
+  if (score >= 80) return "text-emerald-400";
+  if (score >= 55) return "text-amber-400";
+  return "text-rose-400";
 }
 
 export function CompatibilityPanel({
@@ -27,29 +22,27 @@ export function CompatibilityPanel({
 }) {
   if (!ready) {
     return (
-      <Frame>
-        <p className="text-sm text-neutral-500">
-          Pick both tracks to see how well they mix.
-        </p>
-      </Frame>
+      <Panel className="p-5">
+        <p className="text-sm text-muted">Pick both tracks to see how well they mix.</p>
+      </Panel>
     );
   }
 
   if (isPending) {
     return (
-      <Frame>
-        <p className="text-sm text-neutral-500">Scoring…</p>
-      </Frame>
+      <Panel className="p-5">
+        <p className="text-sm text-muted">Scoring…</p>
+      </Panel>
     );
   }
 
   if (error) {
     return (
-      <Frame>
-        <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+      <Panel className="p-5">
+        <p role="alert" className="text-sm text-rose-400">
           {error.message}
         </p>
-      </Frame>
+      </Panel>
     );
   }
 
@@ -66,31 +59,31 @@ export function CompatibilityPanel({
           : "One of these tracks has no analysis data, so they cannot be scored. You can still log the combo.";
 
     return (
-      <Frame>
-        <p className="text-sm text-neutral-500">{message}</p>
-      </Frame>
+      <Panel className="p-5">
+        <p className="text-sm text-muted">{message}</p>
+      </Panel>
     );
   }
 
   return (
-    <Frame>
+    <Panel className="p-5">
       <div className="flex items-baseline gap-3">
-        <span className={`text-4xl font-semibold tabular-nums ${scoreStyle(data.score)}`}>
+        <span className={`data text-5xl font-semibold ${scoreTone(data.score)}`}>
           {data.score}
         </span>
-        <span className="text-sm text-neutral-500">out of 100</span>
+        <span className="text-sm text-muted">out of 100</span>
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <dt className="text-xs uppercase tracking-wide text-neutral-500">Harmonic</dt>
-          <dd className="mt-0.5">
+          <dt className="text-xs tracking-[0.12em] text-muted uppercase">Harmonic</dt>
+          <dd className="mt-1">
             {data.harmonic && (
               <>
-                <span className="font-mono">{data.harmonic.track_a_key}</span>
-                {" → "}
-                <span className="font-mono">{data.harmonic.track_b_key}</span>
-                <span className="ml-2 text-neutral-500">
+                <span className="data text-accent">{data.harmonic.track_a_key}</span>
+                <span className="text-muted"> → </span>
+                <span className="data text-accent">{data.harmonic.track_b_key}</span>
+                <span className="ml-2 text-muted">
                   {data.harmonic.relation.replace(/_/g, " ")}
                 </span>
               </>
@@ -98,14 +91,14 @@ export function CompatibilityPanel({
           </dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-wide text-neutral-500">Tempo</dt>
-          <dd className="mt-0.5 tabular-nums">
+          <dt className="text-xs tracking-[0.12em] text-muted uppercase">Tempo</dt>
+          <dd className="data mt-1">
             {data.tempo && (
               <>
-                {data.tempo.track_a_bpm.toFixed(1)} → {data.tempo.track_b_bpm.toFixed(1)}
-                <span className="ml-2 text-neutral-500">
-                  {data.tempo.delta_percent.toFixed(1)}% apart
-                </span>
+                {data.tempo.track_a_bpm.toFixed(1)}
+                <span className="text-muted"> → </span>
+                {data.tempo.track_b_bpm.toFixed(1)}
+                <span className="ml-2 text-muted">{data.tempo.delta_percent.toFixed(1)}% apart</span>
               </>
             )}
           </dd>
@@ -113,12 +106,12 @@ export function CompatibilityPanel({
       </dl>
 
       {data.notes.length > 0 && (
-        <ul className="mt-4 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
+        <ul className="mt-4 space-y-1 text-sm text-muted">
           {data.notes.map((note) => (
             <li key={note}>{note}</li>
           ))}
         </ul>
       )}
-    </Frame>
+    </Panel>
   );
 }
