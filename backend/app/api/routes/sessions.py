@@ -110,6 +110,17 @@ def get_session(session_id: UUID, user: CurrentUserDep, db: DbDep) -> dict[str, 
     return _normalise(_require_session(db, session_id))
 
 
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(session_id: UUID, user: CurrentUserDep, db: DbDep) -> None:
+    """Remove a session and its setlist entries (which cascade).
+
+    Only the setlist is discarded — the tracks themselves are untouched, and so are
+    any combos logged while playing it.
+    """
+    _require_session(db, session_id)
+    db.table("sessions").delete().eq("id", str(session_id)).execute()
+
+
 @router.post(
     "/{session_id}/tracks",
     response_model=SessionTrackRead,

@@ -33,6 +33,10 @@ class FakeQuery:
         self._calls.append(("update", (self._table, payload)))
         return self
 
+    def upsert(self, payload: dict[str, Any]) -> "FakeQuery":
+        self._calls.append(("upsert", (self._table, payload)))
+        return self
+
     def delete(self) -> "FakeQuery":
         self._calls.append(("delete", (self._table,)))
         return self
@@ -73,6 +77,7 @@ class FakeBucket:
         self._calls = calls
         self._fail_upload = fail_upload
         self._download_payload = download_payload
+        self._fail_remove = False
 
     def download(self, path: str) -> bytes:
         self._calls.append(("download", (path,)))
@@ -85,6 +90,8 @@ class FakeBucket:
         return {"path": path}
 
     def remove(self, paths: list[str]) -> Any:
+        if self._fail_remove:
+            raise RuntimeError("storage unavailable")
         self._calls.append(("remove", tuple(paths)))
         return []
 
@@ -99,10 +106,14 @@ class FakeStorage:
         self._calls = calls
         self._fail_upload = fail_upload
         self._download_payload = download_payload
+        # Set by tests after construction; read here so it reaches each bucket.
+        self._fail_remove = False
 
     def from_(self, bucket: str) -> FakeBucket:
         self._calls.append(("from_", (bucket,)))
-        return FakeBucket(self._calls, self._fail_upload, self._download_payload)
+        bucket_stub = FakeBucket(self._calls, self._fail_upload, self._download_payload)
+        bucket_stub._fail_remove = self._fail_remove
+        return bucket_stub
 
 
 class FakeSupabase:

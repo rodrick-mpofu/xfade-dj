@@ -144,10 +144,15 @@ track detail reports that state so the UI can show progress instead of blocking.
 Verified against synthesized audio in-container: a planted 120.0 BPM click track in
 A minor came back as **119.97 BPM / 8A**.
 
-`energy` is RMS — a stand-in for loudness, not intensity. `danceability` is
-recorded but **not calibrated** (it saturates at 1.0; see the comment in
-`audio_analysis.py`). Neither feeds the v1 compatibility score, which uses Camelot
-and BPM only.
+Anything shorter than 30 seconds is refused rather than analysed — a DJ library holds
+one-shots, and Essentia answers for a 6-second airhorn as confidently as for a track.
+`POST /tracks/{id}/extract` re-queues extraction from any state, which is how a track
+picks up an improved pipeline as well as how a failure gets retried.
+
+`energy` is RMS — a stand-in for loudness, not intensity, and it discriminates poorly
+in practice (0.12–0.42 across a real library). `danceability` behaves sensibly on real
+music (0.19–0.57). Neither feeds the compatibility score, which uses Camelot and BPM
+only.
 
 ## Compatibility scoring
 
@@ -195,6 +200,12 @@ anonymous access.
 
 **Storage keys are load-bearing.** Objects live at `<user_id>/<track_id>.<ext>` in the
 private `tracks` bucket; the storage policies key off that first path segment.
+
+**Deleting a track deletes more than the track.** The foreign keys cascade, so it also
+removes every combo the track appears in, those combos' notes, and its place in any
+setlist. That is the right database behaviour — a combo without its tracks is
+meaningless — but it is more than the word "delete" implies, so any UI needs to say so
+before asking.
 
 **Essentia does not ship Windows wheels.** Step 4 of the build order will need either
 Docker/WSL for the backend, or librosa — which the build spec allows as the fallback

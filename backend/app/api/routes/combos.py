@@ -117,3 +117,13 @@ def list_combos(
 
     response = query.order("logged_at", desc=True).range(offset, offset + limit - 1).execute()
     return [_normalise(row) for row in response.data or []]
+
+
+@router.delete("/{combo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_combo(combo_id: UUID, user: CurrentUserDep, db: DbDep) -> None:
+    """Remove a logged combo and its notes (the notes cascade)."""
+    existing = db.table("combos").select("id").eq("id", str(combo_id)).limit(1).execute()
+    if not existing.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Combo not found.")
+
+    db.table("combos").delete().eq("id", str(combo_id)).execute()

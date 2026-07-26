@@ -209,3 +209,86 @@ def get_track(track_id: UUID, user: CurrentUserDep, db: DbDep) -> dict[str, Any]
         # which is the behaviour we want.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Track not found.")
     return _normalise(response.data[0])
+
+
+@router.delete("/{track_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a track")
+def delete_track(track_id: UUID, user: CurrentUserDep, db: DbDep) -> None:
+    """Remove a track, its features, its audio file, and anything referencing it.
+
+    The foreign keys cascade, so this also deletes every combo the track appears in
+    and removes it from any setlist. That is more than "delete this row" implies —
+    callers should say so before asking.
+    """
+    existing = db.table("tracks").select("id, file_ref").eq("id", str(track_id)).limit(1).execute()
+    if not existing.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Track not found.")
+    file_ref = existing.data[0].get("file_ref")
+
+    try:
+        db.table("tracks").delete().eq("id", str(track_id)).execute()
+    except Exception as exc:
+        logger.exception("track delete failed for %s", track_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not delete the track: {exc}",
+        ) from exc
+
+    # Row first, object second, and only best-effort. The reverse order risks a row
+    # pointing at audio that no longer exists, which the UI would show as a playable
+    # track that cannot be re-analysed. An orphaned object is invisible by comparison.
+    if file_ref:
+        try:
+            db.storage.from_(get_settings().audio_bucket).remove([file_ref])
+        except Exception:
+            logger.exception("orphaned storage object %s after deleting track", file_ref)
+
+
+@router.post(
+    "/{track_id}/extract",
+    response_model=TrackDetail,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Re-run extraction",
+)
+def retry_extraction(
+    track_id: UUID, user: CurrentUserDep, db: DbDep, background_tasks: BackgroundTasks
+) -> dict[str, Any]:
+    """Queue extraction again for a track.
+
+    Works from any state, not just `failed`: re-analysing is also how a track picks up
+    an improved pipeline. The one exception is a job already running, which would race
+    the one in flight for the same row.
+    """
+    response = db.table("tracks").select(TRACK_SELECT).eq("id", str(track_id)).limit(1).execute()
+    if not response.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Track not found.")
+
+    track = _normalise(response.data[0])
+    if not track.get("file_ref"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Track has no stored audio file to analyse.",
+        )
+
+    features = track.get("audio_features") or {}
+    if features.get("status") == "processing":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Extraction is already running for this track.",
+        )
+
+    reset = {
+        "status": "pending",
+        "error_message": None,
+        "bpm": None,
+        "key_camelot": None,
+        "energy": None,
+        "danceability": None,
+        "structure_markers": None,
+        "analyzed_at": None,
+    }
+    # upsert, not update: a track whose features row was never created still needs one.
+    db.table("audio_features").upsert({"track_id": str(track_id), **reset}).execute()
+
+    schedule_extraction(background_tasks, track_id)
+
+    return {**track, "audio_features": {"track_id": str(track_id), **reset}}
