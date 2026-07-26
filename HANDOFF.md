@@ -1,7 +1,7 @@
 # Xfade — handoff
 
 Orientation for picking this up cold, in a new session or by a new person. Written
-2026-07-26 at `4957cfb`.
+2026-07-26, and last revised the same day after the energy rework and the README pass.
 
 This file is the **map**. The detailed open items, with the measurements behind them,
 live in [docs/v1.1-backlog.md](docs/v1.1-backlog.md) — read that before proposing work.
@@ -27,7 +27,7 @@ implementation of the same idea.
 
 | | |
 |---|---|
-| Repo | `github.com/rodrick-mpofu/xfade-dj` (public), `main` at `4957cfb` |
+| Repo | `github.com/rodrick-mpofu/xfade-dj` (public), MIT | 
 | Backend | FastAPI, 257 tests, ruff clean |
 | Frontend | React + TS + Vite, 127 tests, typecheck clean |
 | Database | Supabase — 7 migrations locally, **5 on hosted** (two behind) |
@@ -146,18 +146,19 @@ Each of these was argued through and several were corrected by measurement.
 Full detail in [docs/v1.1-backlog.md](docs/v1.1-backlog.md), which opens with a
 priority order. In short:
 
-1. **Presentation for GitHub** — the README is written for someone building the
-   project, not evaluating it, and there is no LICENSE despite the design doc saying
-   free and open. Screenshots would carry a lot here.
+1. **Screenshots** — the README and LICENSE are done; screenshots are the remaining
+   gap in the front door, and the only one needing a signed-in browser.
 2. **A browser-level test** — CI covers the database seam via `supabase db reset`;
-   nothing covers the UI seam, which is the same blind spot listed above.
+   nothing covers the UI seam, which is the same blind spot listed above. Shares its
+   setup with the screenshots, so the two go together.
 3. **Deployment** — assessed and parked. Blockers are a 1.85 GB library against
    Supabase's 1 GB free tier, Essentia wanting ≥1 GB RAM, and `BackgroundTasks` losing
    in-flight jobs to any restart or idle-stop.
 
 `energy` was the last measured feature-quality problem and is now closed — RMS is
 replaced by a composite of perceptual loudness, spectral centroid and onset rate,
-calibrated against the whole 235-track library (backlog §2).
+calibrated against the whole 235-track library (backlog §2). It is still only shown
+on track detail, though; the Library has no energy column (backlog §8).
 
 Smaller: no combo edit, no session rename, genre only populated on upload so existing
 tracks show none, and the compatibility weights are conventional heuristics that
