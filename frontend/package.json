@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "types:api": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api.ts"
+    "types:api": "openapi-typescript http://localhost:8000/openapi.json -o src/types/api.ts",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@fontsource-variable/outfit": "^5.3.0",
@@ -20,6 +21,7 @@
     "react-router-dom": "^7.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.1.0",

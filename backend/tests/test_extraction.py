@@ -10,11 +10,16 @@ from uuid import UUID
 
 import pytest
 
+from app.core.tags import TagFeatures
 from app.services import extraction
 from app.services.audio_analysis import AnalysisResult
 from tests.fakes import FakeSupabase
 
 TRACK_ID = UUID("22222222-2222-4222-8222-222222222222")
+
+
+def _tags(**overrides) -> TagFeatures:
+    return TagFeatures(**{"bpm": None, "key_camelot": None, "genre": None, **overrides})
 
 
 def _result(**overrides) -> AnalysisResult:
@@ -143,6 +148,62 @@ def test_error_message_is_truncated(fake_db, monkeypatch):
     extraction.run_extraction(TRACK_ID)
 
     assert len(_updates(fake_db)[-1]["error_message"]) <= 500
+
+
+def _genre_updates(fake):
+    return [payload for name, payload in fake.calls_named("update") if name == "tracks"]
+
+
+def test_genre_is_backfilled_from_the_tag_when_the_track_has_none(monkeypatch):
+    fake = FakeSupabase(rows={"tracks": [{"file_ref": "u/t.mp3", "genre": None}]})
+    monkeypatch.setattr(extraction, "get_service_client", lambda: fake)
+    monkeypatch.setattr("app.services.audio_analysis.analyze_file", lambda path: _result())
+    monkeypatch.setattr(extraction, "read_tags_from_path", lambda path: _tags(genre="Amapiano"))
+
+    extraction.run_extraction(TRACK_ID)
+
+    assert _genre_updates(fake) == [{"genre": "Amapiano"}]
+
+
+def test_an_existing_genre_is_never_overwritten(monkeypatch):
+    # Upload lets a typed-in genre beat the tag. Re-analysing must not undo that.
+    fake = FakeSupabase(rows={"tracks": [{"file_ref": "u/t.mp3", "genre": "Afro House"}]})
+    monkeypatch.setattr(extraction, "get_service_client", lambda: fake)
+    monkeypatch.setattr("app.services.audio_analysis.analyze_file", lambda path: _result())
+    monkeypatch.setattr(extraction, "read_tags_from_path", lambda path: _tags(genre="Amapiano"))
+
+    extraction.run_extraction(TRACK_ID)
+
+    assert _genre_updates(fake) == []
+
+
+def test_a_track_with_no_genre_tag_leaves_the_column_alone(monkeypatch):
+    fake = FakeSupabase(rows={"tracks": [{"file_ref": "u/t.mp3", "genre": None}]})
+    monkeypatch.setattr(extraction, "get_service_client", lambda: fake)
+    monkeypatch.setattr("app.services.audio_analysis.analyze_file", lambda path: _result())
+    monkeypatch.setattr(extraction, "read_tags_from_path", lambda path: _tags(genre=None))
+
+    extraction.run_extraction(TRACK_ID)
+
+    assert _genre_updates(fake) == []
+
+
+def test_genre_is_backfilled_even_when_the_audio_is_too_short_to_analyse(monkeypatch):
+    # A one-shot still has tags. Refusing to analyse it should not also mean
+    # refusing to record what the file says about itself.
+    fake = FakeSupabase(rows={"tracks": [{"file_ref": "u/t.mp3", "genre": None}]})
+    monkeypatch.setattr(extraction, "get_service_client", lambda: fake)
+    monkeypatch.setattr(extraction, "read_tags_from_path", lambda path: _tags(genre="Hip Hop/Rap"))
+
+    def _too_short(path):
+        raise ValueError("Too short to analyse: 1.5s, minimum 30s.")
+
+    monkeypatch.setattr("app.services.audio_analysis.analyze_file", _too_short)
+
+    extraction.run_extraction(TRACK_ID)
+
+    assert _genre_updates(fake) == [{"genre": "Hip Hop/Rap"}]
+    assert _updates(fake)[-1]["status"] == "failed"
 
 
 def test_extraction_uses_the_service_role_client():

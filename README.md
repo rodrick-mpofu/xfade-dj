@@ -40,6 +40,36 @@ at all — or for anything unreleased.
 - **Harmonic suggestions** — what mixes well with this track, ranked
 - **Dashboard** — library and combo stats at a glance
 
+## Screenshots
+
+**Library** — BPM, key, genre and duration derived from the file, with extraction
+status per track. The amber dot marks a key where the file's tag and the audio
+disagree; the `Failed` rows are one-shots too short to analyse, refused rather than
+guessed at.
+
+![Library](docs/images/library.png)
+
+**Logging a combo** — the score updates as soon as both tracks are chosen, with the
+reasoning rather than just a number: which keys, how far apart on the wheel, and the
+tempo gap as a percentage.
+
+![Logging a combo, scored live](docs/images/combo-logger.png)
+
+**Harmonic suggestions** — everything in the library ranked against one track. Note
+the spread: an adjacent key 1.8% apart scores 94, while a 3.6% tempo match in a
+clashing key only manages 46. Tempo alone does not carry it.
+
+![Harmonic suggestions ranked against one track](docs/images/suggestions.png)
+
+**Dashboard** — logged combos by rating, with technique and the tracks either side.
+
+![Dashboard](docs/images/dashboard.png)
+
+Captured by [`frontend/scripts/screenshots.mjs`](frontend/scripts/screenshots.mjs)
+against the local stack — `npm run screenshots` — so they can be regenerated after a
+UI change instead of quietly going stale. The combos shown are illustrative; the
+tracks and their analysed features are real.
+
 ## The interesting parts
 
 **Energy is a measurement, not a guess.** It combines perceptual loudness (LUFS),

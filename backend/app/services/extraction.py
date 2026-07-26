@@ -58,6 +58,26 @@ def _update_features(db: Any, track_id: UUID, values: dict[str, Any]) -> None:
     db.table("audio_features").update(values).eq("track_id", str(track_id)).execute()
 
 
+def _backfill_genre(db: Any, track_id: UUID, current: str | None, tagged: str | None) -> None:
+    """Fill in genre from the file's tag, but only where there is none already.
+
+    Genre lives on ``tracks`` rather than ``audio_features`` because it is metadata,
+    not something derived from audio — which is why re-analysing never used to
+    backfill it, and why every track uploaded before the column existed shows nothing.
+
+    Only ever fills a blank. Upload treats a typed-in genre as beating the tag, and
+    re-analysing a track must not quietly undo that correction.
+    """
+    if not tagged or (current or "").strip():
+        return
+    try:
+        db.table("tracks").update({"genre": tagged}).eq("id", str(track_id)).execute()
+    except Exception:
+        # Genre is a nicety; losing it is not worth failing an otherwise good
+        # extraction over.
+        logger.exception("could not backfill genre for track %s", track_id)
+
+
 def _mark_failed(db: Any, track_id: UUID, message: str) -> None:
     """Best-effort — if this write also fails the row stays in ``processing``,
     which is at least honest about the job having died mid-flight."""
@@ -78,7 +98,9 @@ def run_extraction(track_id: UUID) -> None:
     db = get_service_client()
 
     try:
-        track = db.table("tracks").select("file_ref").eq("id", str(track_id)).limit(1).execute()
+        track = (
+            db.table("tracks").select("file_ref, genre").eq("id", str(track_id)).limit(1).execute()
+        )
         if not track.data:
             raise ValueError("Track row not found.")
 
@@ -93,6 +115,9 @@ def run_extraction(track_id: UUID) -> None:
             # it here means re-analysing an older track backfills its tag values
             # without needing a separate migration pass over Storage.
             tags = read_tags_from_path(path)
+            # Before the analysis, so a track that is too short to analyse still
+            # picks up its genre instead of staying blank forever.
+            _backfill_genre(db, track_id, track.data[0].get("genre"), tags.genre)
             result = analyze_file(path)
 
         if result.key_camelot is None:
