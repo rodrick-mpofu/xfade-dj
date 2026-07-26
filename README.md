@@ -151,10 +151,25 @@ one-shots, and Essentia answers for a 6-second airhorn as confidently as for a t
 `POST /tracks/{id}/extract` re-queues extraction from any state, which is how a track
 picks up an improved pipeline as well as how a failure gets retried.
 
-`energy` is RMS — a stand-in for loudness, not intensity, and it discriminates poorly
-in practice (0.12–0.42 across a real library). `danceability` behaves sensibly on real
-music (0.19–0.57). Neither feeds the compatibility score, which uses Camelot and BPM
-only.
+`energy` is a composite of three measures — perceptual loudness (LUFS), spectral
+centroid, and onset rate — one per independent axis. Which three was decided by
+measuring eleven candidates across the whole 235-track library and reading the rank
+correlations: loudness, brightness and activity turned out to be the only groups that
+carry separate information. Spectral flux looks like a measure of drive and is not —
+it correlates 0.85 with LUFS.
+
+It replaced plain RMS, which measured loudness rather than drive and used 0.12–0.42 of
+its range. The composite runs the full 0–1 with every decile populated, and correlates
+only 0.31 with RMS, so it genuinely ranks something else. The clearest movers are
+amapiano and afro remixes — busy, bright, and not loudly mastered — which RMS buried.
+
+The calibration is relative to *this* library: each component is mapped across its
+5th–95th percentile there. For a single-user tool "energetic for what I play" is the
+more useful reading, but it is a calibration, and the raw components are stored in
+`structure_markers` so it can be re-derived from stored rows without re-analysing.
+
+`danceability` behaves sensibly on real music (0.19–0.57). Neither feeds the
+compatibility score, which uses Camelot and BPM only.
 
 ## Compatibility scoring
 

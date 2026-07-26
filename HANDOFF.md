@@ -28,7 +28,7 @@ implementation of the same idea.
 | | |
 |---|---|
 | Repo | `github.com/rodrick-mpofu/xfade-dj` (public), `main` at `4957cfb` |
-| Backend | FastAPI, 244 tests, ruff clean |
+| Backend | FastAPI, 257 tests, ruff clean |
 | Frontend | React + TS + Vite, 127 tests, typecheck clean |
 | Database | Supabase — 7 migrations locally, **5 on hosted** (two behind) |
 | CI | GitHub Actions, 3 jobs, green |
@@ -99,6 +99,14 @@ Each of these was argued through and several were corrected by measurement.
   `key_camelot_effective` = `coalesce(tag, derived)`) decide which one scoring uses —
   the tag. Across the real library, 13 of 16 tracks have a key tag and **5 disagree**.
   Keeping both means the pipeline stays honest and the disagreements stay visible.
+- **Energy is calibrated against this library, not an absolute scale.** It is three
+  measures — loudness, brightness, activity — each mapped over the library's 5th–95th
+  percentile and averaged. Picking those three was a measurement: eleven candidates
+  over 235 files collapsed into exactly three independent clusters. The reading is
+  "energetic for what I play", which is the useful one for a single user. The raw
+  components live in `structure_markers` so the mapping can be re-derived without
+  re-analysing. Note the frame geometry in `audio_analysis.py` is part of the
+  calibration — changing `FRAME_SIZE` or `HOP_SIZE` invalidates the centroid range.
 - **Audio under 30 seconds is refused, not analysed.** A DJ library holds one-shots;
   Essentia reported a 6-second airhorn as 136 BPM in 10B with *higher* beat confidence
   than any real track. Duration separates them cleanly where confidence does not.
@@ -138,17 +146,18 @@ Each of these was argued through and several were corrected by measurement.
 Full detail in [docs/v1.1-backlog.md](docs/v1.1-backlog.md), which opens with a
 priority order. In short:
 
-1. **`energy` discriminates poorly** — 0.12–0.42 across a real library, using under
-   half its range. RMS measures loudness, not drive. The last measured feature-quality
-   problem.
-2. **Presentation for GitHub** — the README is written for someone building the
+1. **Presentation for GitHub** — the README is written for someone building the
    project, not evaluating it, and there is no LICENSE despite the design doc saying
    free and open. Screenshots would carry a lot here.
-3. **A browser-level test** — CI covers the database seam via `supabase db reset`;
+2. **A browser-level test** — CI covers the database seam via `supabase db reset`;
    nothing covers the UI seam, which is the same blind spot listed above.
-4. **Deployment** — assessed and parked. Blockers are a 1.85 GB library against
+3. **Deployment** — assessed and parked. Blockers are a 1.85 GB library against
    Supabase's 1 GB free tier, Essentia wanting ≥1 GB RAM, and `BackgroundTasks` losing
    in-flight jobs to any restart or idle-stop.
+
+`energy` was the last measured feature-quality problem and is now closed — RMS is
+replaced by a composite of perceptual loudness, spectral centroid and onset rate,
+calibrated against the whole 235-track library (backlog §2).
 
 Smaller: no combo edit, no session rename, genre only populated on upload so existing
 tracks show none, and the compatibility weights are conventional heuristics that
