@@ -14,5 +14,10 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
+    // Scoped to src on purpose. Vitest's default glob is repo-wide, so it also
+    // collects e2e/*.spec.ts — and Playwright's `test` is a different API that
+    // throws the moment vitest imports it. The two runners have to be kept apart:
+    // `npm test` is vitest over src, `npm run test:e2e` is Playwright over e2e.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
 });
