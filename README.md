@@ -113,7 +113,7 @@ where a confident early claim was later corrected by measurement.
 ## Status
 
 **v1 is complete**: every item in design doc §8's MVP scope is built, plus a UI pass.
-257 backend tests, 127 frontend tests, CI green on three jobs.
+261 backend tests, 127 frontend tests, 4 browser tests, CI green on four jobs.
 
 Not deployed, deliberately — the constraints are assessed and written down in backlog
 §7. For a single-user tool, `docker compose up` on the laptop is a legitimate end
@@ -174,6 +174,31 @@ pytest
 Frontend, from `frontend/`: `npm install`, then `npm test` for Vitest and
 `npm run types:api` to regenerate TypeScript types from a running backend's OpenAPI
 schema.
+
+### Browser tests
+
+```bash
+npm run test:e2e --prefix frontend
+```
+
+Needs all three processes up. Unlike the Vitest suite, nothing here is mocked — a
+real browser signs into a real Supabase, the frontend calls a real backend, and
+Postgres enforces RLS. That is deliberate: the missing GRANTs, the CORS startup
+crash, and a placeholder string that only looked wrong on screen were all invisible
+to unit tests.
+
+It seeds two throwaway users and their libraries, and refuses to run against a
+non-local Supabase, since it creates and deletes accounts. Feature rows are seeded
+rather than extracted, so Essentia is never involved.
+
+To convince yourself it works, break the thing it exists to catch:
+
+```bash
+docker exec supabase_db_xfade psql -U postgres -d postgres -c "revoke select on public.tracks from authenticated;"
+```
+
+The first test goes red. `grant select on public.tracks to authenticated;` puts it
+back.
 
 `GET /health` is a liveness check, `GET /health/db` round-trips to Postgres, and
 interactive API docs are at `/docs`.

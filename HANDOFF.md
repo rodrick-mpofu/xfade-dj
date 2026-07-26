@@ -129,6 +129,10 @@ Each of these was argued through and several were corrected by measurement.
   a settings parse error that crashed the app at startup while 115 tests passed, and a
   placeholder string that only looked wrong on screen. **Verify against the running
   stack**, and after an optimistic write, reload to confirm it actually persisted.
+
+  `frontend/e2e/` now covers that seam — `npm run test:e2e --prefix frontend`, with
+  all three processes up. It was checked by revoking the table GRANT and watching it
+  go red, so it is known to catch the real thing rather than merely to pass.
 - **`npm ci` wipes `node_modules`** and will fail or half-delete if the Vite dev
   server is holding files. Stop it first.
 - **PowerShell re-tokenizes here-strings** passed to native commands, so a multi-line
@@ -146,14 +150,12 @@ Each of these was argued through and several were corrected by measurement.
 Full detail in [docs/v1.1-backlog.md](docs/v1.1-backlog.md), which opens with a
 priority order. In short:
 
-1. **Screenshots** — the README and LICENSE are done; screenshots are the remaining
-   gap in the front door, and the only one needing a signed-in browser.
-2. **A browser-level test** — CI covers the database seam via `supabase db reset`;
-   nothing covers the UI seam, which is the same blind spot listed above. Shares its
-   setup with the screenshots, so the two go together.
-3. **Deployment** — assessed and parked. Blockers are a 1.85 GB library against
+1. **Deployment** — assessed and parked. Blockers are a 1.85 GB library against
    Supabase's 1 GB free tier, Essentia wanting ≥1 GB RAM, and `BackgroundTasks` losing
    in-flight jobs to any restart or idle-stop.
+2. **Tuning the compatibility weights** — the most interesting problem left, and the
+   one needing real logged ratings. The five combos currently in the local database
+   are demo data with invented ratings; delete or replace them first (backlog §5).
 
 `energy` was the last measured feature-quality problem and is now closed — RMS is
 replaced by a composite of perceptual loudness, spectral centroid and onset rate,

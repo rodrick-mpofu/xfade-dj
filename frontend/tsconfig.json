@@ -5,7 +5,10 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    // "node" is here for e2e/ and the config files, which run outside the browser.
+    // It does mean nothing stops src/ importing a node built-in; Vite would fail the
+    // build if it did, so the guard exists, just not in the typechecker.
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
 
     "strict": true,
     "noUnusedLocals": true,
@@ -20,5 +23,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "e2e", "playwright.config.ts"]
 }

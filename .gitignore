@@ -22,6 +22,11 @@ frontend/dist/
 frontend/.vite/
 *.tsbuildinfo
 
+# Playwright — traces and screenshots from failed browser tests
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+
 # Supabase CLI local state
 supabase/.branches/
 supabase/.temp/
