@@ -13,6 +13,13 @@
   --color-accent: #22d3ee;
   --color-accent-ink: #062b33;
 
+  /* Outfit — a geometric sans. Circular bowls and even stroke weight give the
+     interface a technical, instrument-panel feel rather than a documentary one,
+     which suits a tool used at a glance mid-set. Swapping it is one import in
+     main.tsx plus this line. */
+  --font-sans:
+    "Outfit Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
   --font-mono:
     ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
 }
@@ -22,7 +29,13 @@ html {
 }
 
 body {
-  @apply bg-ink text-text antialiased;
+  @apply bg-ink text-text font-sans antialiased;
+}
+
+/* Geometric faces read wide at display sizes; pulling the tracking in keeps big
+   headings from drifting apart. */
+h1 {
+  letter-spacing: -0.02em;
 }
 
 /* Numeric data — BPM, keys, durations, dates — is for scanning down a column, not

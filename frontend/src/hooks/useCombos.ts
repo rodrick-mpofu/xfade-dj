@@ -23,6 +23,25 @@ export function useCompatibility(trackA: string | null, trackB: string | null) {
   });
 }
 
+/** Every logged combo, newest first (the backend orders by logged_at). */
+export function useCombos() {
+  return useQuery({ queryKey: ["combos", { trackId: undefined }], queryFn: () => api.listCombos() });
+}
+
+/**
+ * Suggestions for one track. Kept fresh for a while because the answer only
+ * changes when the library does, and re-scoring on every focus would be wasteful.
+ */
+export function useCompatibleTracks(trackId: string | null) {
+  return useQuery({
+    queryKey: ["compatible", trackId],
+    queryFn: () => api.getCompatibleTracks(trackId!),
+    enabled: Boolean(trackId),
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
+
 export function useCreateCombo() {
   const queryClient = useQueryClient();
 

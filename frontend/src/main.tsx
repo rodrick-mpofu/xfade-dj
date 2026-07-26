@@ -3,6 +3,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
+// Self-hosted variable font: one file, bundled, no request to a font CDN and no
+// dependency on being online.
+import "@fontsource-variable/outfit";
 import "./index.css";
 import { AuthProvider } from "./lib/auth";
 

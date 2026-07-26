@@ -3,6 +3,7 @@ import type {
   ComboCreate,
   ComboRead,
   CompatibilityRead,
+  CompatibleTrack,
   SessionCreate,
   SessionRead,
   SessionTrackRead,
@@ -90,6 +91,10 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(combo),
     }),
+
+  /** Ranked suggestions: the whole library scored against one track. */
+  getCompatibleTracks: (trackId: string, limit = 20) =>
+    request<CompatibleTrack[]>(`/tracks/${trackId}/compatible?limit=${limit}`),
 
   getCompatibility: (trackA: string, trackB: string) =>
     request<CompatibilityRead>(`/compatibility?track_a=${trackA}&track_b=${trackB}`),

@@ -25,9 +25,9 @@ npm install && npm run dev
 | `/log` | Combo logger — live compatibility score | built |
 | `/sessions` | Sessions — list, create, delete | built |
 | `/sessions/:id` | Session planner — reorderable setlist | built |
-| `/` | Dashboard — stat tiles, top combos, recent sessions | stage C |
-| `/combos` | Combos list | stage C |
-| `/suggestions` | Harmonic suggestions | stage C |
+| `/` | Dashboard — stat tiles, best-rated combos, recent sessions | built |
+| `/combos` | Combos list — paired cards, delete | built |
+| `/suggestions` | Harmonic suggestions — library ranked against one track | built |
 
 Note `/` is the Dashboard, not the Library — the Library moved to `/library` when the
 sidebar went in.
@@ -70,6 +70,15 @@ friction the make-or-break factor.
 **An unscoreable pair is still loggable.** If either track's analysis is pending or
 failed, the panel says which and the form still submits. The score is an aid, not a
 gate.
+
+**The dashboard ranks combos by rating, not plays.** The reference design ranks by
+play count; combos here are logged once rather than incremented, so there is no such
+number. The panel is titled "Best rated combos" rather than "Top combos" because it
+answers a different question and should say so.
+
+**Suggestions is not the v2 recommender.** It runs the existing Camelot-and-tempo
+rules across the library and sorts. The content-based similarity the design doc
+defers to v2 (§5) learns from feature vectors; this applies a fixed wheel.
 
 **Destructive actions state their consequence, not just their name.** `ConfirmDialog`
 takes a `consequence` prop because "Delete" alone is a lie here: deleting a track also

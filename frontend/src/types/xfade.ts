@@ -87,6 +87,31 @@ export type CompatibilityStatus =
   | "extraction_failed"
   | "missing_features";
 
+export interface HarmonicDetail {
+  score: number;
+  relation: string;
+  track_a_key: string;
+  track_b_key: string;
+}
+
+export interface TempoDetail {
+  score: number;
+  track_a_bpm: number;
+  track_b_bpm: number;
+  delta_bpm: number;
+  delta_percent: number;
+  double_time: boolean;
+}
+
+/** One ranked suggestion from `GET /tracks/{id}/compatible`. */
+export interface CompatibleTrack {
+  track: TrackDetail;
+  score: number;
+  harmonic: HarmonicDetail;
+  tempo: TempoDetail;
+  notes: string[];
+}
+
 export interface CompatibilityRead {
   track_a_id: string;
   track_b_id: string;

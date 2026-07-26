@@ -10,21 +10,14 @@ import {
 } from "./components/Icons";
 import { useAuth } from "./lib/auth";
 import { ComboLogger } from "./routes/ComboLogger";
+import { Combos } from "./routes/Combos";
+import { Dashboard } from "./routes/Dashboard";
 import { Library } from "./routes/Library";
 import { Login } from "./routes/Login";
 import { SessionPlanner } from "./routes/SessionPlanner";
 import { Sessions } from "./routes/Sessions";
+import { Suggestions } from "./routes/Suggestions";
 import { TrackDetail } from "./routes/TrackDetail";
-
-/** Placeholder until stage C. */
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-      <p className="mt-2 text-sm text-muted">Not built yet.</p>
-    </div>
-  );
-}
 
 function NotFound() {
   return (
@@ -104,12 +97,12 @@ function Shell() {
             rows to unreadable lengths. */}
         <div className="mx-auto max-w-[1500px]">
           <Routes>
-            <Route path="/" element={<ComingSoon title="Dashboard" />} />
+            <Route path="/" element={<Dashboard />} />
             <Route path="/library" element={<Library />} />
             <Route path="/tracks/:trackId" element={<TrackDetail />} />
-            <Route path="/combos" element={<ComingSoon title="Combos" />} />
+            <Route path="/combos" element={<Combos />} />
             <Route path="/log" element={<ComboLogger />} />
-            <Route path="/suggestions" element={<ComingSoon title="Harmonic suggestions" />} />
+            <Route path="/suggestions" element={<Suggestions />} />
             <Route path="/sessions" element={<Sessions />} />
             <Route path="/sessions/:sessionId" element={<SessionPlanner />} />
             <Route path="*" element={<NotFound />} />
