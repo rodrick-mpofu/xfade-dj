@@ -19,6 +19,16 @@ logger = logging.getLogger("xfade.analysis")
 
 SAMPLE_RATE = 44100
 
+# A DJ library holds one-shots — airhorns, sirens, drops — alongside tracks, and
+# Essentia answers for them just as confidently as for real music. Measured on a
+# real library: one-shots ran 3.5-6.6s, actual tracks 137-490s, so duration
+# separates them with a wide margin where confidence does not (an airhorn scored
+# beats_confidence 4.13, higher than every real track in the sample).
+#
+# Refusing to analyse is better than storing a fabricated BPM and key, which would
+# otherwise feed the compatibility score as if it meant something.
+MIN_DURATION_SECONDS = 30.0
+
 # Essentia's Danceability is roughly 0-3; the column is constrained to 0-1.
 #
 # Provisional, and known to be crude: a synthetic 120 BPM click track already
@@ -42,6 +52,21 @@ def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
     return max(low, min(high, value))
 
 
+def ensure_analysable(duration_seconds: float) -> None:
+    """Reject audio too short to have a meaningful tempo or key.
+
+    Split out from :func:`analyze_file` so it is testable without Essentia, which
+    has no Windows wheels.
+    """
+    if duration_seconds <= 0:
+        raise ValueError("Decoded audio is empty.")
+    if duration_seconds < MIN_DURATION_SECONDS:
+        raise ValueError(
+            f"Too short to analyse: {duration_seconds:.1f}s, minimum "
+            f"{MIN_DURATION_SECONDS:.0f}s. One-shots and drops have no tempo or key."
+        )
+
+
 def analyze_file(path: str) -> AnalysisResult:
     """Extract BPM, key, and energy from an audio file on disk.
 
@@ -51,8 +76,11 @@ def analyze_file(path: str) -> AnalysisResult:
     import essentia.standard as es  # noqa: PLC0415 — see module docstring
 
     audio = es.MonoLoader(filename=path, sampleRate=SAMPLE_RATE)()
-    if len(audio) == 0:
-        raise ValueError("Decoded audio is empty.")
+
+    # Checked before the expensive beat tracking below, so a rejected one-shot
+    # costs a decode rather than a full analysis.
+    duration_seconds = len(audio) / SAMPLE_RATE
+    ensure_analysable(duration_seconds)
 
     # multifeature is the slower, more accurate of the RhythmExtractor2013 methods.
     # Beat tracking is the expensive part of this function; it is why extraction is
@@ -78,7 +106,7 @@ def analyze_file(path: str) -> AnalysisResult:
         energy=round(energy, 4),
         danceability=round(danceability, 4),
         structure_markers={
-            "duration_seconds": round(len(audio) / SAMPLE_RATE, 2),
+            "duration_seconds": round(duration_seconds, 2),
             "beat_count": int(len(beats)),
             "beats_confidence": round(float(beats_confidence), 4),
             # Kept raw alongside the Camelot code so a mapping bug is diagnosable
