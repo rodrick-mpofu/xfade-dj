@@ -10,8 +10,16 @@ def _row(track_id, **feature_overrides):
         "status": "complete",
         "bpm": 128.0,
         "key_camelot": "8A",
+        "bpm_tag": None,
+        "key_camelot_tag": None,
         **feature_overrides,
     }
+    # Stand in for the generated columns: tag first, analysis second. Derived after
+    # the overrides so a test that nulls bpm nulls the effective value too.
+    features.setdefault("bpm_effective", features["bpm_tag"] or features["bpm"])
+    features.setdefault(
+        "key_camelot_effective", features["key_camelot_tag"] or features["key_camelot"]
+    )
     return {"id": track_id, "audio_features": features}
 
 

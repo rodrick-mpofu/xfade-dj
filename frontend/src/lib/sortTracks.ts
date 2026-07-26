@@ -1,3 +1,4 @@
+import { bpmOf, keyOf } from "./features";
 import type { TrackDetail } from "../types/xfade";
 
 export type SortKey =
@@ -50,11 +51,12 @@ function valueFor(track: TrackDetail, key: SortKey): string | number | null {
     case "genre":
       return track.genre;
     case "bpm":
-      return track.audio_features?.bpm ?? null;
+      return bpmOf(track.audio_features);
     case "duration":
       return track.audio_features?.duration_seconds ?? null;
     case "key_camelot":
-      return camelotOrder(track.audio_features?.key_camelot ?? null);
+      // Sorts on the same value the table shows and the scorer uses.
+      return camelotOrder(keyOf(track.audio_features));
   }
 }
 

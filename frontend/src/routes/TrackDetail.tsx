@@ -5,6 +5,7 @@ import { ExtractionStatusBadge } from "../components/ExtractionStatus";
 import { Button } from "../components/ui/Button";
 import { Panel } from "../components/ui/Panel";
 import { Pill, formatDuration } from "../components/ui/Pill";
+import { bpmOf, keyOf, keysDisagree } from "../lib/features";
 import {
   useDeleteCombo,
   useDeleteTrack,
@@ -99,9 +100,17 @@ export function TrackDetail() {
         </p>
       )}
 
+      {keysDisagree(features) && (
+        <p className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-4 text-sm text-amber-200">
+          Analysis read this as <span className="data">{features?.key_camelot}</span>, but the
+          file's own tag says <span className="data">{features?.key_camelot_tag}</span>. The tag
+          is used for scoring — across a real library it is the more reliable of the two.
+        </p>
+      )}
+
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-        <Stat label="BPM" value={features?.bpm != null ? features.bpm.toFixed(2) : "—"} />
-        <Stat label="Key" value={features?.key_camelot ?? "—"} />
+        <Stat label="BPM" value={bpmOf(features)?.toFixed(2) ?? "—"} />
+        <Stat label="Key" value={keyOf(features) ?? "—"} />
         <Stat label="Duration" value={formatDuration(features?.duration_seconds)} />
         <Stat label="Energy" value={features?.energy != null ? features.energy.toFixed(2) : "—"} />
         <Stat

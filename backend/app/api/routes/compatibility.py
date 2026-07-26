@@ -61,21 +61,31 @@ def get_compatibility(
     if any(f is None for f in features):
         return {**base, "status": CompatibilityStatus.MISSING_FEATURES}
 
-    if any(f["status"] == "failed" for f in features):
-        # Terminal: the frontend should stop waiting and offer a retry instead.
-        return {**base, "status": CompatibilityStatus.EXTRACTION_FAILED}
+    # Effective values resolve tag-vs-derived in the database. A track whose file
+    # carried BPM and key is scoreable straight away, so extraction status only
+    # matters when there is nothing to score with.
+    usable = [
+        f.get("bpm_effective") is not None and f.get("key_camelot_effective") is not None
+        for f in features
+    ]
 
-    if any(f["status"] != "complete" for f in features):
-        # Still running. A normal state, not an error — the combo logger shows
-        # progress and polls.
-        return {**base, "status": CompatibilityStatus.PENDING_EXTRACTION}
-
-    if any(f.get("bpm") is None or f.get("key_camelot") is None for f in features):
+    if not all(usable):
+        if any(f["status"] == "failed" for f in features):
+            # Terminal: the frontend should stop waiting and offer a retry instead.
+            return {**base, "status": CompatibilityStatus.EXTRACTION_FAILED}
+        if any(f["status"] != "complete" for f in features):
+            # Still running. A normal state, not an error — the combo logger shows
+            # progress and polls.
+            return {**base, "status": CompatibilityStatus.PENDING_EXTRACTION}
         return {**base, "status": CompatibilityStatus.MISSING_FEATURES}
 
     result = score_compatibility(
-        TrackFeatures(bpm=features[0]["bpm"], key_camelot=features[0]["key_camelot"]),
-        TrackFeatures(bpm=features[1]["bpm"], key_camelot=features[1]["key_camelot"]),
+        TrackFeatures(
+            bpm=features[0]["bpm_effective"], key_camelot=features[0]["key_camelot_effective"]
+        ),
+        TrackFeatures(
+            bpm=features[1]["bpm_effective"], key_camelot=features[1]["key_camelot_effective"]
+        ),
     )
 
     return {

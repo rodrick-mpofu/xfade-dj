@@ -30,6 +30,7 @@ from uuid import UUID
 from fastapi import BackgroundTasks
 
 from app.config import get_settings
+from app.core.tags import read_tags_from_path
 from app.db.supabase import get_service_client
 
 logger = logging.getLogger("xfade.extraction")
@@ -88,6 +89,10 @@ def run_extraction(track_id: UUID) -> None:
         _update_features(db, track_id, {"status": "processing", "error_message": None})
 
         with _downloaded(db, file_ref) as path:
+            # Read the file's own BPM and key too. Upload already does this, but doing
+            # it here means re-analysing an older track backfills its tag values
+            # without needing a separate migration pass over Storage.
+            tags = read_tags_from_path(path)
             result = analyze_file(path)
 
         if result.key_camelot is None:
@@ -106,6 +111,8 @@ def run_extraction(track_id: UUID) -> None:
                 "energy": result.energy,
                 "danceability": result.danceability,
                 "duration_seconds": result.duration_seconds,
+                "bpm_tag": tags.bpm,
+                "key_camelot_tag": tags.key_camelot,
                 "structure_markers": result.structure_markers,
                 "error_message": None,
                 "analyzed_at": datetime.now(UTC).isoformat(),

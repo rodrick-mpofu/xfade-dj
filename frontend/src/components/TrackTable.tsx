@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { bpmOf, keyOf, keysDisagree } from "../lib/features";
 import { sortTracks, type SortDirection, type SortKey } from "../lib/sortTracks";
 import type { TrackDetail } from "../types/xfade";
 import { ExtractionStatusBadge } from "./ExtractionStatus";
@@ -75,6 +76,8 @@ export function TrackTable({ tracks }: { tracks: TrackDetail[] }) {
         <tbody className="divide-y divide-edge">
           {sorted.map((track) => {
             const features = track.audio_features;
+            const bpm = bpmOf(features);
+            const key = keyOf(features);
             return (
               <tr key={track.id} className="transition hover:bg-panel">
                 <td className="px-4 py-3">
@@ -84,10 +87,23 @@ export function TrackTable({ tracks }: { tracks: TrackDetail[] }) {
                   <div className="data text-xs text-muted">{track.artist ?? "—"}</div>
                 </td>
                 <td className="data px-4 py-3 text-right text-accent">
-                  {features?.bpm != null ? features.bpm.toFixed(0) : "—"}
+                  {bpm != null ? bpm.toFixed(0) : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  {features?.key_camelot ? <Pill tone="key">{features.key_camelot}</Pill> : "—"}
+                  {key ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Pill tone="key">{key}</Pill>
+                      {keysDisagree(features) && (
+                        <span
+                          className="size-1.5 rounded-full bg-amber-400"
+                          title={`Analysis says ${features?.key_camelot}; the file's tag says ${features?.key_camelot_tag}. The tag is used.`}
+                          aria-label="Analysis and tag disagree on this key"
+                        />
+                      )}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   {track.genre ? <Pill>{track.genre}</Pill> : <span className="text-muted">—</span>}

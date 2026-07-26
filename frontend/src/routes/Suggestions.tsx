@@ -6,6 +6,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { EmptyState, Panel } from "../components/ui/Panel";
 import { Pill } from "../components/ui/Pill";
 import { useCompatibleTracks } from "../hooks/useCombos";
+import { keyOf, bpmOf } from "../lib/features";
 import { useTracks } from "../hooks/useTracks";
 import type { TrackDetail } from "../types/xfade";
 
@@ -34,12 +35,12 @@ export function Suggestions() {
               <p className="text-xs tracking-[0.12em] text-muted uppercase">Selected</p>
               <p className="mt-1 font-medium">{source.title}</p>
               <div className="mt-2 flex items-center gap-2">
-                {source.audio_features?.key_camelot && (
-                  <Pill tone="key">{source.audio_features.key_camelot}</Pill>
+                {keyOf(source.audio_features) && (
+                  <Pill tone="key">{keyOf(source.audio_features)}</Pill>
                 )}
-                {source.audio_features?.bpm != null && (
+                {bpmOf(source.audio_features) != null && (
                   <span className="data text-xs text-accent">
-                    {source.audio_features.bpm.toFixed(1)} BPM
+                    {bpmOf(source.audio_features)!.toFixed(1)} BPM
                   </span>
                 )}
               </div>

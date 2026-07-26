@@ -6,6 +6,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { EmptyState, Panel } from "../components/ui/Panel";
 import { Pill } from "../components/ui/Pill";
 import { useCombos } from "../hooks/useCombos";
+import { bpmOf, keyOf } from "../lib/features";
 import { useDeleteCombo, useTracks } from "../hooks/useTracks";
 import type { TrackDetail } from "../types/xfade";
 
@@ -16,8 +17,8 @@ function TrackCard({ track }: { track: TrackDetail | undefined }) {
       <p className="truncate font-semibold">{track?.title ?? "Unknown track"}</p>
       <p className="truncate text-sm text-muted">{track?.artist ?? "—"}</p>
       <div className="mt-3 flex items-center gap-2">
-        {features?.bpm != null && <Pill tone="key">{features.bpm.toFixed(0)}</Pill>}
-        {features?.key_camelot && <Pill tone="key">{features.key_camelot}</Pill>}
+        {bpmOf(features) != null && <Pill tone="key">{bpmOf(features)!.toFixed(0)}</Pill>}
+        {keyOf(features) && <Pill tone="key">{keyOf(features)}</Pill>}
       </div>
     </div>
   );

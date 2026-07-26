@@ -12,6 +12,7 @@ import {
   useSession,
 } from "../hooks/useSessions";
 import { useTracks } from "../hooks/useTracks";
+import { bpmOf, keyOf } from "../lib/features";
 import { moveItem, removeAt } from "../lib/reorder";
 import type { TrackDetail } from "../types/xfade";
 
@@ -86,9 +87,9 @@ export function SessionPlanner() {
                     <span className="font-medium">{track?.title ?? "Unknown track"}</span>
                     <span className="ml-2 text-sm text-muted">{track?.artist ?? ""}</span>
                   </span>
-                  {features?.key_camelot && <Pill tone="key">{features.key_camelot}</Pill>}
-                  {features?.bpm != null && (
-                    <span className="data text-xs text-accent">{features.bpm.toFixed(0)}</span>
+                  {keyOf(features) && <Pill tone="key">{keyOf(features)}</Pill>}
+                  {bpmOf(features) != null && (
+                    <span className="data text-xs text-accent">{bpmOf(features)!.toFixed(0)}</span>
                   )}
                   <div className="flex items-center gap-0.5 text-muted">
                     <button

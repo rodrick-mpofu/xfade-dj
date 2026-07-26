@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { bpmOf, keyOf } from "../lib/features";
 import { filterTracks } from "../lib/filterTracks";
 import type { TrackDetail } from "../types/xfade";
 import { Pill } from "./ui/Pill";
@@ -9,9 +10,9 @@ function TrackSummary({ track }: { track: TrackDetail }) {
     <span className="flex min-w-0 items-center gap-2">
       <span className="truncate font-medium">{track.title}</span>
       <span className="truncate text-xs text-muted">{track.artist ?? "—"}</span>
-      {features?.key_camelot && <Pill tone="key">{features.key_camelot}</Pill>}
-      {features?.bpm != null && (
-        <span className="data text-xs text-accent">{features.bpm.toFixed(0)}</span>
+      {keyOf(features) && <Pill tone="key">{keyOf(features)}</Pill>}
+      {bpmOf(features) != null && (
+        <span className="data text-xs text-accent">{bpmOf(features)!.toFixed(0)}</span>
       )}
     </span>
   );

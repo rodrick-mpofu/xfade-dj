@@ -16,6 +16,15 @@ export interface AudioFeatures {
   energy: number | null;
   danceability: number | null;
   duration_seconds: number | null;
+
+  /** From the file's own tags, not derived. Kept so disagreements stay visible. */
+  bpm_tag: number | null;
+  key_camelot_tag: string | null;
+
+  /** What scoring uses: the tag when present, otherwise the analysis. */
+  bpm_effective: number | null;
+  key_camelot_effective: string | null;
+
   structure_markers: Record<string, unknown> | null;
   error_message: string | null;
   analyzed_at: string | null;

@@ -35,7 +35,7 @@ from app.core.audio_files import (
     normalise_extension,
 )
 from app.core.compatibility import TrackFeatures, score_compatibility
-from app.core.tags import read_genre
+from app.core.tags import read_tags
 from app.schemas.compatibility import CompatibleTrack
 from app.schemas.track import TrackDetail
 from app.services.extraction import schedule_extraction
@@ -113,9 +113,10 @@ async def create_track(
 
     payload = await _read_upload(file)
 
+    tags = read_tags(payload)
     # An explicit value wins; the tag is only a fallback, so a correction made in the
     # form is never overwritten by whatever the file happens to claim.
-    resolved_genre = (genre or "").strip() or read_genre(payload)
+    resolved_genre = (genre or "").strip() or tags.genre
 
     track_id = uuid4()
     # Layout is load-bearing: the storage policies key off the first path segment.
@@ -155,7 +156,17 @@ async def create_track(
         )
         features_response = (
             db.table("audio_features")
-            .insert({"track_id": str(track_id), "status": "pending"})
+            .insert(
+                {
+                    "track_id": str(track_id),
+                    "status": "pending",
+                    # Written now rather than after analysis: the tags are already in
+                    # hand, so a track can be scored the moment it is uploaded instead
+                    # of waiting for Essentia.
+                    "bpm_tag": tags.bpm,
+                    "key_camelot_tag": tags.key_camelot,
+                }
+            )
             .execute()
         )
     except Exception as exc:
@@ -250,18 +261,22 @@ def compatible_tracks(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Track not found.")
 
     def features_of(track: dict[str, Any]) -> TrackFeatures | None:
+        # The effective columns resolve tag-vs-derived in the database, so scoring
+        # never has to re-decide which value wins.
         features = track.get("audio_features") or {}
-        if features.get("status") != "complete":
+        bpm, key = features.get("bpm_effective"), features.get("key_camelot_effective")
+        if bpm is None or key is None:
             return None
-        if features.get("bpm") is None or features.get("key_camelot") is None:
-            return None
-        return TrackFeatures(bpm=features["bpm"], key_camelot=features["key_camelot"])
+        return TrackFeatures(bpm=bpm, key_camelot=key)
 
     source_features = features_of(source)
     if source_features is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="This track has no analysis yet, so it cannot be matched against anything.",
+            detail=(
+                "This track has no BPM or key yet — neither from its tags nor from "
+                "analysis — so it cannot be matched against anything."
+            ),
         )
 
     scored: list[dict[str, Any]] = []

@@ -44,6 +44,17 @@ class AudioFeaturesRead(BaseModel):
     energy: float | None = None
     danceability: float | None = None
     duration_seconds: float | None = None
+
+    # Read from the file's tags rather than derived. Kept beside the analysed values
+    # so a disagreement is visible instead of silently resolved.
+    bpm_tag: float | None = None
+    key_camelot_tag: str | None = None
+
+    # What scoring actually uses: the tag when present, otherwise the analysis.
+    # Generated in the database so the rule cannot drift between callers.
+    bpm_effective: float | None = None
+    key_camelot_effective: str | None = None
+
     structure_markers: dict[str, Any] | None = None
     error_message: str | None = None
     analyzed_at: datetime | None = None

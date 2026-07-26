@@ -26,6 +26,11 @@ def _track(track_id, title, bpm=128.0, key="8A", status="complete"):
             "status": status,
             "bpm": bpm if status == "complete" else None,
             "key_camelot": key if status == "complete" else None,
+            "bpm_tag": None,
+            "key_camelot_tag": None,
+            # No tags here, so the generated columns just mirror the analysis.
+            "bpm_effective": bpm if status == "complete" else None,
+            "key_camelot_effective": key if status == "complete" else None,
             "energy": 0.3,
             "danceability": 0.4,
             "duration_seconds": 210.0,
