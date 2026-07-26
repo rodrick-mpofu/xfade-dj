@@ -76,9 +76,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned rather than `latest`. Resolving "latest" costs an unauthenticated
+      # GitHub API call, and both jobs that need the CLI make it at the same time —
+      # which rate-limited and failed this job while the browser job got through.
+      # A pin also means a CLI release cannot change what CI does overnight.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       # The slow job (it pulls the local stack), and the one that earns its keep.
       # The RLS policies once shipped without table GRANTs, which every unit test
@@ -112,9 +116,10 @@ jobs:
           cache: pip
           cache-dependency-path: backend/pyproject.toml
 
+      # Same pin as the migrations job — see the note there.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Start local stack
         run: supabase start
