@@ -11,6 +11,7 @@ direct PUT from the frontend — the object key layout stays the same either way
 """
 
 import logging
+from dataclasses import asdict
 from typing import Annotated, Any
 from uuid import UUID, uuid4
 
@@ -33,6 +34,9 @@ from app.core.audio_files import (
     canonical_mime_for,
     normalise_extension,
 )
+from app.core.compatibility import TrackFeatures, score_compatibility
+from app.core.tags import read_genre
+from app.schemas.compatibility import CompatibleTrack
 from app.schemas.track import TrackDetail
 from app.services.extraction import schedule_extraction
 
@@ -89,6 +93,7 @@ async def create_track(
     file: Annotated[UploadFile, File(description="Audio file")],
     title: Annotated[str, Form(min_length=1, max_length=300)],
     artist: Annotated[str | None, Form(max_length=300)] = None,
+    genre: Annotated[str | None, Form(max_length=80)] = None,
 ) -> dict[str, Any]:
     # Form fields, so this cannot ride on the pydantic schema. min_length=1 lets a
     # whitespace-only title through, which then trips the database's
@@ -107,6 +112,10 @@ async def create_track(
         )
 
     payload = await _read_upload(file)
+
+    # An explicit value wins; the tag is only a fallback, so a correction made in the
+    # form is never overwritten by whatever the file happens to claim.
+    resolved_genre = (genre or "").strip() or read_genre(payload)
 
     track_id = uuid4()
     # Layout is load-bearing: the storage policies key off the first path segment.
@@ -137,6 +146,7 @@ async def create_track(
                     "user_id": user.id,
                     "title": title,
                     "artist": artist.strip() if artist else None,
+                    "genre": resolved_genre,
                     "file_ref": object_key,
                     "source": "upload",
                 }
@@ -209,6 +219,73 @@ def get_track(track_id: UUID, user: CurrentUserDep, db: DbDep) -> dict[str, Any]
         # which is the behaviour we want.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Track not found.")
     return _normalise(response.data[0])
+
+
+@router.get(
+    "/{track_id}/compatible",
+    response_model=list[CompatibleTrack],
+    summary="Tracks that mix well with this one",
+)
+def compatible_tracks(
+    track_id: UUID,
+    user: CurrentUserDep,
+    db: DbDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> list[dict[str, Any]]:
+    """Rank the library against one track using the same rules as `/compatibility`.
+
+    Still no ML: this is the v1 Camelot-and-tempo scorer applied across every
+    analysed track and sorted. The content-based similarity the design doc defers to
+    v2 (§5) is a different thing — it learns from feature vectors rather than
+    applying a fixed wheel.
+
+    Scoring a few hundred tracks in Python is microseconds; if a library ever gets
+    big enough for that to matter, the work moves into SQL.
+    """
+    rows = db.table("tracks").select(TRACK_SELECT).eq("user_id", user.id).execute().data or []
+    tracks = [_normalise(row) for row in rows]
+
+    source = next((t for t in tracks if str(t["id"]) == str(track_id)), None)
+    if source is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Track not found.")
+
+    def features_of(track: dict[str, Any]) -> TrackFeatures | None:
+        features = track.get("audio_features") or {}
+        if features.get("status") != "complete":
+            return None
+        if features.get("bpm") is None or features.get("key_camelot") is None:
+            return None
+        return TrackFeatures(bpm=features["bpm"], key_camelot=features["key_camelot"])
+
+    source_features = features_of(source)
+    if source_features is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This track has no analysis yet, so it cannot be matched against anything.",
+        )
+
+    scored: list[dict[str, Any]] = []
+    for candidate in tracks:
+        if str(candidate["id"]) == str(track_id):
+            continue
+        candidate_features = features_of(candidate)
+        if candidate_features is None:
+            # Unanalysed tracks are skipped rather than ranked last: a zero would
+            # read as "bad match" when the truth is "not known yet".
+            continue
+        result = score_compatibility(source_features, candidate_features)
+        scored.append(
+            {
+                "track": candidate,
+                "score": result.score,
+                "harmonic": asdict(result.harmonic),
+                "tempo": asdict(result.tempo),
+                "notes": result.notes,
+            }
+        )
+
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored[:limit]
 
 
 @router.delete("/{track_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a track")

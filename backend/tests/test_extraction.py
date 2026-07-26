@@ -23,6 +23,7 @@ def _result(**overrides) -> AnalysisResult:
         "key_camelot": "8A",
         "energy": 0.42,
         "danceability": 0.61,
+        "duration_seconds": 212.5,
         "structure_markers": {"beat_count": 256},
     }
     return AnalysisResult(**{**fields, **overrides})

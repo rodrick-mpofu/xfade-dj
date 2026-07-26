@@ -10,6 +10,9 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "python-multipart>=0.0.12",
+    # Reads the genre tag off an upload. Pure Python, so unlike Essentia it installs
+    # everywhere, including the Windows host.
+    "mutagen>=1.47",
 ]
 
 [project.optional-dependencies]

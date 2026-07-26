@@ -105,6 +105,7 @@ def run_extraction(track_id: UUID) -> None:
                 "key_camelot": result.key_camelot,
                 "energy": result.energy,
                 "danceability": result.danceability,
+                "duration_seconds": result.duration_seconds,
                 "structure_markers": result.structure_markers,
                 "error_message": None,
                 "analyzed_at": datetime.now(UTC).isoformat(),

@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.track import TrackDetail
+
 
 class CompatibilityStatus(StrEnum):
     """Why a score may be absent.
@@ -35,6 +37,17 @@ class TempoDetail(BaseModel):
     delta_bpm: float
     delta_percent: float
     double_time: bool
+
+
+class CompatibleTrack(BaseModel):
+    """One ranked suggestion. Carries the whole track so the list can render a row
+    without a second round trip per result."""
+
+    track: TrackDetail
+    score: int = Field(ge=0, le=100)
+    harmonic: HarmonicDetail
+    tempo: TempoDetail
+    notes: list[str] = Field(default_factory=list)
 
 
 class CompatibilityRead(BaseModel):

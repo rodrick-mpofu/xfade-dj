@@ -30,6 +30,7 @@ class TrackRead(BaseModel):
     user_id: UUID
     title: str
     artist: str | None = None
+    genre: str | None = None
     file_ref: str | None = None
     source: str
     created_at: datetime
@@ -42,6 +43,7 @@ class AudioFeaturesRead(BaseModel):
     key_camelot: str | None = None
     energy: float | None = None
     danceability: float | None = None
+    duration_seconds: float | None = None
     structure_markers: dict[str, Any] | None = None
     error_message: str | None = None
     analyzed_at: datetime | None = None

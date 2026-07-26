@@ -45,6 +45,7 @@ class AnalysisResult:
     key_camelot: str | None
     energy: float
     danceability: float | None
+    duration_seconds: float
     structure_markers: dict[str, Any]
 
 
@@ -105,6 +106,7 @@ def analyze_file(path: str) -> AnalysisResult:
         key_camelot=key_camelot,
         energy=round(energy, 4),
         danceability=round(danceability, 4),
+        duration_seconds=round(duration_seconds, 2),
         structure_markers={
             "duration_seconds": round(duration_seconds, 2),
             "beat_count": int(len(beats)),
