@@ -30,7 +30,7 @@ implementation of the same idea.
 | Repo | `github.com/rodrick-mpofu/xfade-dj` (public), MIT | 
 | Backend | FastAPI, 257 tests, ruff clean |
 | Frontend | React + TS + Vite, 127 tests, typecheck clean |
-| Database | Supabase — 7 migrations locally, **5 on hosted** (two behind) |
+| Database | Supabase — 7 migrations, local and hosted in sync |
 | CI | GitHub Actions, 3 jobs, green |
 | Real data | 16 tracks from the owner's library in the local database |
 | Deployed | No, deliberately — see backlog §7 |
@@ -142,8 +142,9 @@ Each of these was argued through and several were corrected by measurement.
   short client timeouts expire. Harmless with one user, relevant to any deploy.
 - **mutagen does not expose `TKEY`** through its "easy" interface until registered —
   `EasyID3.RegisterTextKey("key", "TKEY")`. Without it, key tags read as absent.
-- **Hosted is two migrations behind local.** Fine while working locally; `supabase db
-  push` before anything depends on it.
+- **Hosted and local are in sync** as of 2026-07-26, all seven migrations. Check with
+  `supabase migration list --linked` rather than assuming; `supabase db push` applies
+  the difference, and `--dry-run` first is worth the thirty seconds.
 
 ## What is left
 
