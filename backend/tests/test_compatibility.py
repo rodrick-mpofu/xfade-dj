@@ -1,5 +1,6 @@
 import pytest
 
+from app.core.camelot import pitch_class_of
 from app.core.compatibility import (
     HARMONIC_WEIGHT,
     TEMPO_WEIGHT,
@@ -56,6 +57,64 @@ def test_distant_keys_clash():
     result = score_harmonic("8A", "2A")
     assert result.relation == "clash"
     assert result.score < 0.3
+
+
+# --- the "+7" semitone move -------------------------------------------------
+#
+# Adding 7 to a Camelot number lands five steps around the wheel, which is seven
+# perfect fifths, which is one semitone. It is a technique, not a mistake, and it
+# used to score identically to a tritone.
+
+
+@pytest.mark.parametrize(
+    ("a", "b"),
+    [
+        ("6A", "1A"),  # G minor -> G# minor, the example that started this
+        ("1A", "6A"),  # and back down
+        ("8A", "3A"),  # A minor -> A# minor
+        ("11B", "4B"),  # the B side of the wheel behaves the same
+        ("12A", "5A"),  # across the 12/1 wrap
+    ],
+)
+def test_seven_steps_is_a_semitone_not_a_clash(a, b):
+    result = score_harmonic(a, b)
+    assert result.relation == "semitone"
+    assert result.score == 0.5
+
+
+def test_the_semitone_move_is_confirmed_by_actual_pitch():
+    # Not just wheel arithmetic: 6A really is G minor and 1A really is G# minor,
+    # so this checks the claim against the key mapping rather than restating it.
+    assert (pitch_class_of("1A") - pitch_class_of("6A")) % 12 == 1
+    assert (pitch_class_of("3A") - pitch_class_of("8A")) % 12 == 1
+
+
+def test_a_tritone_still_clashes():
+    # Six steps, not five. The distinction is the whole point of the change.
+    assert score_harmonic("8A", "2A").relation == "clash"
+
+
+def test_the_semitone_scores_below_a_smooth_move_and_above_a_clash():
+    smooth = score_harmonic("8A", "9A").score
+    semitone = score_harmonic("8A", "3A").score
+    clash = score_harmonic("8A", "2A").score
+    assert clash < semitone < smooth
+
+
+def test_the_note_says_which_way_the_semitone_goes():
+    up = score_compatibility(
+        TrackFeatures(bpm=124.0, key_camelot="6A"),
+        TrackFeatures(bpm=124.0, key_camelot="1A"),
+    )
+    down = score_compatibility(
+        TrackFeatures(bpm=124.0, key_camelot="1A"),
+        TrackFeatures(bpm=124.0, key_camelot="6A"),
+    )
+
+    assert any("semitone up" in note for note in up.notes)
+    assert any("semitone down" in note for note in down.notes)
+    # Direction is the only difference; the score is symmetric.
+    assert up.score == down.score
 
 
 def test_harmonic_scoring_is_symmetric():

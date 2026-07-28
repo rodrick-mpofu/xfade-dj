@@ -285,6 +285,14 @@ fader mid-mix, a key clash is not. Camelot distance is measured around the wheel
 pairs (70 against 140) are matched on the doubled tempo rather than scored as a 100%
 miss.
 
+Wheel numbers are the circle of fifths, so a distance of *n* is 7*n* semitones once it
+wraps. Five steps therefore lands a single semitone away — the move DJs reach for by
+adding 7 to the Camelot number (6A + 7 = 13 → 1A, G minor into G♯ minor). It scores as
+`semitone`, deliberately mid-range: a semitone apart shares almost no notes, so a long
+blend will sound wrong, but it is a recognised lift on a cut or into a drop. It used to
+fall through to `clash` alongside the tritone, which conflated a technique with a
+mistake.
+
 The weights and thresholds in [compatibility.py](backend/app/core/compatibility.py)
 are conventional DJ heuristics, not validated values — named constants so they are
 easy to argue with. Tuning them against logged ratings is backlog §3.

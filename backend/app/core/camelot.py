@@ -65,6 +65,26 @@ _MINOR: dict[int, str] = {
 }
 
 
+# Reverse of the two tables above. Built rather than written out so the two
+# directions cannot drift apart.
+_CODE_TO_PITCH_CLASS: dict[str, int] = {
+    **{code: pitch for pitch, code in _MAJOR.items()},
+    **{code: pitch for pitch, code in _MINOR.items()},
+}
+
+
+def pitch_class_of(code: str | None) -> int | None:
+    """'6A' -> 7 (G). ``None`` for anything unrecognised.
+
+    Wheel distance alone cannot tell a semitone up from a semitone down — both are
+    five steps around a twelve-hour circle — so anything that cares about direction
+    has to come back to actual pitch.
+    """
+    if not code:
+        return None
+    return _CODE_TO_PITCH_CLASS.get(code.strip().upper())
+
+
 def to_camelot(key: str | None, scale: str | None) -> str | None:
     """Convert a key name plus 'major'/'minor' to a Camelot code.
 

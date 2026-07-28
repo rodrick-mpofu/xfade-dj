@@ -13,6 +13,8 @@ replacing judgement.
 from dataclasses import dataclass
 from typing import Literal
 
+from app.core.camelot import pitch_class_of
+
 # Key clashes are audible and hard to fix mid-mix; a few BPM is correctable with the
 # pitch fader or sync. So harmony carries more of the score than tempo does.
 HARMONIC_WEIGHT = 0.6
@@ -33,15 +35,32 @@ HarmonicRelation = Literal[
     "adjacent",
     "relative",
     "energy_boost",
+    "semitone",
     "diagonal",
     "clash",
 ]
 
 # Camelot relation -> harmonic score. Distances are circular on the 1-12 wheel.
+#
+# Wheel numbers are the circle of fifths, so a distance of n is n perfect fifths,
+# which is 7n semitones once it wraps:
+#
+#   1 -> 7 semitones (a fifth)        the standard smooth move
+#   2 -> 2 semitones (a whole tone)   a deliberate lift
+#   5 -> 1 semitone                   the "+7" move; see below
+#   6 -> 6 semitones (a tritone)      genuinely a clash
+#
 _SAME_LETTER_SCORES: dict[int, tuple[float, HarmonicRelation]] = {
     0: (1.0, "identical"),  # same key
     1: (0.9, "adjacent"),  # neighbour on the wheel, the standard smooth move
     2: (0.6, "energy_boost"),  # +2 lift; works, but it is a deliberate jump
+    # Five steps round the wheel is a single semitone — the move DJs reach for by
+    # adding 7 to the Camelot number (6A + 7 = 13 -> 1A, G minor to G# minor).
+    # It used to fall through to "clash" alongside the tritone, which conflated a
+    # technique with a mistake. It is not *harmonically* close — a semitone apart
+    # shares almost no notes, and a long blend will sound wrong — so it scores as
+    # deliberate rather than smooth.
+    5: (0.5, "semitone"),
 }
 _CROSS_LETTER_SCORES: dict[int, tuple[float, HarmonicRelation]] = {
     0: (0.85, "relative"),  # relative major/minor, e.g. 8A <-> 8B
@@ -150,6 +169,18 @@ def score_tempo(bpm_a: float, bpm_b: float) -> TempoResult:
     )
 
 
+def _semitone_direction(key_a: str, key_b: str) -> str:
+    """'A semitone up' or 'down' — the wheel distance is 5 either way.
+
+    Combos are directional (A into B), so this is worth getting right: a lift up is
+    the move people mean, and dropping a semitone is a different, rarer choice.
+    """
+    pitch_a, pitch_b = pitch_class_of(key_a), pitch_class_of(key_b)
+    if pitch_a is None or pitch_b is None:
+        return "A semitone apart"
+    return "A semitone up" if (pitch_b - pitch_a) % 12 == 1 else "A semitone down"
+
+
 def score_compatibility(a: TrackFeatures, b: TrackFeatures) -> CompatibilityResult:
     harmonic = score_harmonic(a.key_camelot, b.key_camelot)
     tempo = score_tempo(a.bpm, b.bpm)
@@ -165,6 +196,11 @@ def score_compatibility(a: TrackFeatures, b: TrackFeatures) -> CompatibilityResu
         notes.append("Relative major/minor — same root, different mood.")
     elif harmonic.relation == "energy_boost":
         notes.append("Two steps up the wheel — a deliberate energy lift.")
+    elif harmonic.relation == "semitone":
+        notes.append(
+            f"{_semitone_direction(a.key_camelot, b.key_camelot)} — the +7 move. "
+            "A deliberate lift: cut or drop into it rather than blending long."
+        )
     elif harmonic.relation == "diagonal":
         notes.append("Diagonal move — usable, but less reliable.")
     else:
