@@ -33,7 +33,7 @@ at all — or for anything unreleased.
 
 ## What it does
 
-- **Library** — upload, sortable BPM/key/genre/duration columns, live extraction status
+- **Library** — upload, sortable BPM/key/genre/energy/duration columns, live extraction status
 - **Compatibility scoring** — 0–100 for any pair, with the reasoning spelled out
 - **Combo logger** — log a transition with technique, rating and notes, scored live
 - **Session planner** — build an ordered setlist
@@ -42,10 +42,11 @@ at all — or for anything unreleased.
 
 ## Screenshots
 
-**Library** — BPM, key, genre and duration derived from the file, with extraction
-status per track. The amber dot marks a key where the file's tag and the audio
-disagree; the `Failed` rows are one-shots too short to analyse, refused rather than
-guessed at.
+**Library** — BPM, key, genre, energy and duration derived from the file, with
+extraction status per track. Every column sorts, and energy shows as a bar because it
+is calibrated against this library: the number only means something next to the other
+rows. The amber dot marks a key where the file's tag and the audio disagree; the
+`Failed` rows are one-shots too short to analyse, refused rather than guessed at.
 
 ![Library](docs/images/library.png)
 

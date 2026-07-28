@@ -4,6 +4,7 @@ import { bpmOf, keyOf, keysDisagree } from "../lib/features";
 import { sortTracks, type SortDirection, type SortKey } from "../lib/sortTracks";
 import type { TrackDetail } from "../types/xfade";
 import { ExtractionStatusBadge } from "./ExtractionStatus";
+import { EnergyMeter } from "./ui/EnergyMeter";
 import { EmptyState } from "./ui/Panel";
 import { Pill, formatDuration } from "./ui/Pill";
 
@@ -12,6 +13,7 @@ const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
   { key: "bpm", label: "BPM", numeric: true },
   { key: "key_camelot", label: "Key" },
   { key: "genre", label: "Genre" },
+  { key: "energy", label: "Energy", numeric: true },
   { key: "duration", label: "Duration", numeric: true },
 ];
 
@@ -107,6 +109,9 @@ export function TrackTable({ tracks }: { tracks: TrackDetail[] }) {
                 </td>
                 <td className="px-4 py-3">
                   {track.genre ? <Pill>{track.genre}</Pill> : <span className="text-muted">—</span>}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <EnergyMeter value={features?.energy} />
                 </td>
                 <td className="data px-4 py-3 text-right text-muted">
                   {formatDuration(features?.duration_seconds)}

@@ -119,6 +119,25 @@ describe("TrackTable", () => {
     expect(rowOrder()).toEqual(["long", "short"]);
   });
 
+  it("shows energy as a value, not just a bar", async () => {
+    renderTable([track("Driving", { energy: 0.909 })]);
+    // The bar is aria-hidden decoration; the number is what carries the information.
+    expect(screen.getByText("0.91")).toBeInTheDocument();
+  });
+
+  it("sorts by energy", async () => {
+    const user = userEvent.setup();
+    renderTable([track("calm", { energy: 0.217 }), track("driving", { energy: 0.909 })]);
+
+    await user.click(screen.getByRole("button", { name: /energy/i }));
+    expect(rowOrder()).toEqual(["driving", "calm"]);
+  });
+
+  it("shows a dash for a track with no energy yet", () => {
+    renderTable([track("Fresh", { bpm: 128 })]);
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+
   it("exposes sort state to assistive tech", async () => {
     const user = userEvent.setup();
     renderTable([track("a", { bpm: 90 })]);

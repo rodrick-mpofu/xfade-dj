@@ -8,6 +8,7 @@ export type SortKey =
   | "key_camelot"
   | "genre"
   | "duration"
+  | "energy"
   | "created_at";
 export type SortDirection = "asc" | "desc";
 
@@ -54,6 +55,9 @@ function valueFor(track: TrackDetail, key: SortKey): string | number | null {
       return bpmOf(track.audio_features);
     case "duration":
       return track.audio_features?.duration_seconds ?? null;
+    case "energy":
+      // No effective/tag pair for energy — nothing writes it but extraction.
+      return track.audio_features?.energy ?? null;
     case "key_camelot":
       // Sorts on the same value the table shows and the scorer uses.
       return camelotOrder(keyOf(track.audio_features));

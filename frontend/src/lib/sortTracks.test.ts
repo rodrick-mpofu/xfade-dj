@@ -87,6 +87,34 @@ describe("sortTracks", () => {
     expect(titles(sortTracks(tracks, "key_camelot", "asc"))).toEqual(["good", "bad"]);
   });
 
+  it("sorts by energy in both directions", () => {
+    // Values from the real library after the composite replaced RMS: an acapella-ish
+    // floor, the median, and a driving amapiano remix.
+    const tracks = [
+      track("mid", { energy: 0.544 }),
+      track("calm", { energy: 0.217 }),
+      track("driving", { energy: 0.909 }),
+    ];
+
+    expect(titles(sortTracks(tracks, "energy", "asc"))).toEqual(["calm", "mid", "driving"]);
+    expect(titles(sortTracks(tracks, "energy", "desc"))).toEqual(["driving", "mid", "calm"]);
+  });
+
+  it("puts tracks with no energy last, like every other feature column", () => {
+    const tracks = [track("unanalysed"), track("analysed", { energy: 0.5 })];
+
+    expect(titles(sortTracks(tracks, "energy", "asc"))).toEqual(["analysed", "unanalysed"]);
+    expect(titles(sortTracks(tracks, "energy", "desc"))).toEqual(["analysed", "unanalysed"]);
+  });
+
+  it("keeps a zero energy distinct from a missing one", () => {
+    // 0 is a real value the composite produces — the library's floor sits there —
+    // so a falsy check rather than a null check would sort it as unanalysed.
+    const tracks = [track("floor", { energy: 0 }), track("none"), track("some", { energy: 0.3 })];
+
+    expect(titles(sortTracks(tracks, "energy", "asc"))).toEqual(["floor", "some", "none"]);
+  });
+
   it("sorts titles case-insensitively", () => {
     const tracks = [track("zebra"), track("Apple"), track("mango")];
     expect(titles(sortTracks(tracks, "title", "asc"))).toEqual(["Apple", "mango", "zebra"]);
