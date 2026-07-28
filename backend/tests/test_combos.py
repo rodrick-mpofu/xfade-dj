@@ -152,3 +152,81 @@ def test_listing_paginates(authed_client):
     authed_client(fake).get("/combos", params={"limit": 10, "offset": 30})
 
     assert ("combos", 30, 39) in fake.calls_named("range")
+
+
+# --- editing -----------------------------------------------------------------
+#
+# Backlog §5: a wrong rating or technique used to mean deleting and re-logging.
+# The tracks stay immutable — changing either side is a different transition, not
+# a correction.
+
+
+def test_editing_requires_a_token(client):
+    assert client.patch(f"/combos/{COMBO_ID}", json={"rating": 5}).status_code == 401
+
+
+def test_update_writes_only_the_fields_sent(authed_client):
+    fake = _fake()
+
+    response = authed_client(fake).patch(f"/combos/{COMBO_ID}", json={"rating": 5})
+
+    assert response.status_code == 200
+    payload = fake.calls_named("update")[0][1]
+    assert payload == {"rating": 5}
+    # Omitting technique must leave it alone rather than blanking it.
+    assert "technique" not in payload
+
+
+def test_an_explicit_null_clears_a_field(authed_client):
+    # Distinct from omitting it: "no rating" and "no opinion" are different edits.
+    fake = _fake()
+
+    authed_client(fake).patch(f"/combos/{COMBO_ID}", json={"rating": None})
+
+    assert fake.calls_named("update")[0][1] == {"rating": None}
+
+
+def test_a_blank_technique_becomes_null(authed_client):
+    # A cleared text field posts "", which should not sit in the column as an
+    # empty string masquerading as a technique.
+    fake = _fake()
+
+    authed_client(fake).patch(f"/combos/{COMBO_ID}", json={"technique": "   "})
+
+    assert fake.calls_named("update")[0][1] == {"technique": None}
+
+
+def test_an_empty_patch_is_rejected(authed_client):
+    response = authed_client(_fake()).patch(f"/combos/{COMBO_ID}", json={})
+
+    assert response.status_code == 400
+    assert "No fields" in response.json()["detail"]
+
+
+def test_updating_a_missing_combo_is_404(authed_client):
+    response = authed_client(_fake(combos=[])).patch(f"/combos/{COMBO_ID}", json={"rating": 5})
+
+    assert response.status_code == 404
+
+
+def test_the_tracks_cannot_be_edited(authed_client):
+    # Not in ComboUpdate at all, so pydantic drops it rather than writing it.
+    fake = _fake()
+
+    authed_client(fake).patch(f"/combos/{COMBO_ID}", json={"track_a_id": TRACK_B, "rating": 3})
+
+    assert fake.calls_named("update")[0][1] == {"rating": 3}
+
+
+def test_rating_bounds_are_enforced(authed_client):
+    for bad in (0, 6, 99):
+        response = authed_client(_fake()).patch(f"/combos/{COMBO_ID}", json={"rating": bad})
+        assert response.status_code == 422, bad
+
+
+def test_the_response_carries_the_notes_back(authed_client):
+    fake = _fake(combos=[{**_combo_row(), "combo_notes": [_note_row()]}])
+
+    response = authed_client(fake).patch(f"/combos/{COMBO_ID}", json={"rating": 5})
+
+    assert response.json()["notes"][0]["text"] == "held it 32 bars"

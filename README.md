@@ -35,7 +35,8 @@ at all — or for anything unreleased.
 
 - **Library** — upload, sortable BPM/key/genre/energy/duration columns, live extraction status
 - **Compatibility scoring** — 0–100 for any pair, with the reasoning spelled out
-- **Combo logger** — log a transition with technique, rating and notes, scored live
+- **Combo logger** — log a transition with technique, rating and notes, scored live,
+  with the rating and technique editable afterwards
 - **Session planner** — build an ordered setlist
 - **Harmonic suggestions** — what mixes well with this track, ranked
 - **Dashboard** — library and combo stats at a glance

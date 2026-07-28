@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import type {
   ComboCreate,
   ComboRead,
+  ComboUpdate,
   CompatibilityRead,
   CompatibleTrack,
   SessionCreate,
@@ -79,6 +80,17 @@ export const api = {
     request<TrackDetail>(`/tracks/${id}/extract`, { method: "POST" }),
 
   deleteCombo: (id: string) => request<void>(`/combos/${id}`, { method: "DELETE" }),
+
+  /**
+   * Correct a logged combo. Only the keys present are changed, so omitting a field
+   * leaves it alone while sending `null` clears it — don't spread a whole combo in.
+   */
+  updateCombo: (id: string, changes: ComboUpdate) =>
+    request<ComboRead>(`/combos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    }),
 
   deleteSession: (id: string) => request<void>(`/sessions/${id}`, { method: "DELETE" }),
 

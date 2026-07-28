@@ -1,7 +1,8 @@
 """Combo logging routes — build spec §5.
 
-    POST /combos   log a combo (track_a, track_b, technique, rating, notes)
-    GET  /combos   list logged combos
+    POST  /combos        log a combo (track_a, track_b, technique, rating, notes)
+    GET   /combos        list logged combos
+    PATCH /combos/{id}   correct a rating or technique
 
 The `track_id` filter on the listing serves the track-detail view, which shows the
 combos a track appears in (build spec §6).
@@ -18,7 +19,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import CurrentUserDep, DbDep
-from app.schemas.combo import ComboCreate, ComboRead
+from app.schemas.combo import ComboCreate, ComboRead, ComboUpdate
 
 logger = logging.getLogger("xfade.combos")
 
@@ -117,6 +118,39 @@ def list_combos(
 
     response = query.order("logged_at", desc=True).range(offset, offset + limit - 1).execute()
     return [_normalise(row) for row in response.data or []]
+
+
+@router.patch("/{combo_id}", response_model=ComboRead)
+def update_combo(
+    combo_id: UUID, payload: ComboUpdate, user: CurrentUserDep, db: DbDep
+) -> dict[str, Any]:
+    """Correct a logged combo's rating or technique.
+
+    Only the fields the client actually sent are written, so clearing a rating and
+    not mentioning it are different requests.
+    """
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields to update.",
+        )
+
+    if isinstance(changes.get("technique"), str):
+        # A field cleared in the UI arrives as "", which should mean "no technique"
+        # rather than an empty string sitting in the column.
+        changes["technique"] = changes["technique"].strip() or None
+
+    updated = db.table("combos").update(changes).eq("id", str(combo_id)).execute()
+    # RLS scopes the update to the caller's own rows, so someone else's combo simply
+    # matches nothing — indistinguishable from a missing one, and 404 is right for both.
+    if not updated.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Combo not found.")
+
+    # Re-read rather than returning the update's own representation: the response
+    # embeds combo_notes, and an UPDATE cannot join them.
+    response = db.table("combos").select(COMBO_SELECT).eq("id", str(combo_id)).limit(1).execute()
+    return _normalise(response.data[0]) if response.data else _normalise(updated.data[0])
 
 
 @router.delete("/{combo_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import type { ComboCreate } from "../types/xfade";
+import type { ComboCreate, ComboUpdate } from "../types/xfade";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -39,6 +39,23 @@ export function useCompatibleTracks(trackId: string | null) {
     enabled: Boolean(trackId),
     staleTime: 5 * 60_000,
     retry: false,
+  });
+}
+
+/**
+ * Correct a logged combo's rating or technique.
+ *
+ * No optimistic update on purpose: the whole point of editing is that the stored
+ * value was wrong, and showing the new one before the write lands would be the same
+ * failure again. It refetches and shows what the database actually holds.
+ */
+export function useUpdateCombo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, changes }: { id: string; changes: ComboUpdate }) =>
+      api.updateCombo(id, changes),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["combos"] }),
   });
 }
 

@@ -29,6 +29,23 @@ class ComboCreate(BaseModel):
         return self
 
 
+class ComboUpdate(BaseModel):
+    """A partial edit. Only the fields actually sent are changed.
+
+    Both fields are nullable *and* optional, which are different things here:
+    omitting `rating` leaves it alone, while sending ``null`` clears it. The route
+    tells them apart with ``exclude_unset``, so "no opinion" and "no rating" do not
+    collapse into each other.
+
+    The tracks are deliberately not editable. Changing either side makes it a
+    different transition — the rating and notes were about the old pair — so that
+    case is a delete and a re-log, not an edit.
+    """
+
+    technique: str | None = Field(default=None, max_length=120)
+    rating: int | None = Field(default=None, ge=1, le=5)
+
+
 class ComboRead(BaseModel):
     id: UUID
     user_id: UUID

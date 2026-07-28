@@ -58,6 +58,16 @@ export interface ComboCreate {
   notes?: string[];
 }
 
+/**
+ * A partial correction. Omitting a key leaves that field alone; sending `null`
+ * clears it. The tracks are absent on purpose — changing either side makes it a
+ * different transition, which is a delete and a re-log rather than an edit.
+ */
+export interface ComboUpdate {
+  technique?: string | null;
+  rating?: number | null;
+}
+
 export interface ComboRead {
   id: string;
   user_id: string;
